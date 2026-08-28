@@ -1,0 +1,5 @@
+# 无外部依赖，纯Python标准库实现
+# 如需接入大模型API，可自行添加:
+# openai>=1.0.0
+# requests>=2.28.0
+# beautifulsoup4>=4.11.0
