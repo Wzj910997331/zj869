@@ -7,6 +7,9 @@
 | 08-28 15:07 | 彩种切换：七星彩 → 排列5（用户指示） | 方案文档重写为 `docs/排列5M1方案.md` |
 | 08-28 15:07 | 排列5历史数据源验证 | 500彩票网 `inc/history.php?limit=730` = 730期（2026-08-27~2024-07-31）✅ |
 | 08-28 15:07 | 数据源排查 | 排除：体彩官方 webapi（gameNo 1-99 无排列5）、akshare 1.18.88（已移除彩票模块）、澳客/新浪/乐彩/中彩网（404） |
+| 08-28 15:2x | gouli99 站点逆向 | SPA(Vue)，API=wsqdata.gouli8.cn `v2/*`；`feeds/rank`/`getNewestSerial` 公开可用但有限流；登录 `v2/user/gaolatUserDefaultLogin` 需签名（HmacMD5，待逆向）；账号凭据已落盘 secrets/gouli99.txt |
+| 08-28 15:2x | 派 2 个子代理调研 GitHub | ① 彩票爬虫经验 ② SPA登录+图片识别方案（运行中） |
+| 08-28 15:2x | 容器安装 Playwright+Chromium | 后台进行中（无头浏览器方案，绕过签名逆向） |
 | 08-28 15:0x | akshare 安装验证 | 1.18.88 装好但无 lottery 函数，弃用 |
 | 08-28 14:52 | 建立 .dev 监控机制 | 编排状态落盘，恢复指引写入 ORCHESTRATOR.md |
 | 08-28 14:4x | 编写开发指南 docs/DEV_GUIDE.md | 已提交 `6847467` |

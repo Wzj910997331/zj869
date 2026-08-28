@@ -26,8 +26,8 @@
 - [x] 容器开发环境（venv/git 身份/SSH 密钥）
 - [x] 开发指南 `docs/DEV_GUIDE.md`
 - [x] **历史数据源验证**：500彩票网 `inc/history.php?limit=730` = 2年730期 ✅（详见方案文档）
-- [ ] M1a 实现：`collector.py` 接 500 彩票网排列5历史数据并入库 ← 下一步（可先行）
-- [ ] M1b 博主规律采集（**等用户提供网站 URL**）
+- [ ] M1a 实现：`collector.py` 接 500 彩票网排列5历史数据并入库（可先行）
+- [ ] M1b 博主规律采集：**gouli99 站点分析进行中**（API 已定位；登录需签名 → 走无头浏览器方案；Playwright 安装中）
 - [ ] M2 规律分类+回测
 - [ ] M3 决策闭环
 
@@ -37,7 +37,8 @@
 |---|---|
 | 排列5历史数据 | 500彩票网 `https://datachart.500.com/plw/history/inc/history.php?limit=N`，UA+Referer，gb2312，`<tr class="t_tr1">`；limit=730 一次拉 2 年 |
 | 不可用源 | 体彩官方 webapi（无排列5）、akshare 1.18.88（无彩票模块）、500.com 其他路径、澳客/新浪/乐彩/中彩网 |
-| 容器网络 | 外网通（pypi/500.com）；apt 源 repos.riverbegin.com 不可达；`/root` 未挂载进容器，脚本放 `/home` |
+| gouli99 论坛 | SPA(Vue)，API=`wsqdata.gouli8.cn/v2/*`（`feeds/rank` 公开但限流；登录 `v2/user/gaolatUserDefaultLogin` 需 HmacMD5 签名；账号 17806707872 在 Windows 本机 `secrets/gouli99.txt`） |
+| 容器网络 | 外网通（pypi/500.com/wsqdata）；apt 源 repos.riverbegin.com 不可达；`/root` 未挂载进容器，脚本放 `/home` |
 | 容器环境 | zhenjie 容器：Python 3.10.12 + venv `.venv`；Claude Code 2.1.224（`/usr/local/bin/claude`） |
 | 编码坑 | 500.com 页面 gb2312；本框架 print 已修复 GBK 兼容 |
 
