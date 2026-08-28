@@ -17,6 +17,7 @@
 | 08-28 15:4x | **M1a 实现完成** | `collector.py::_fetch_history()` 接 500彩票网真实排列5数据；实测 730 期（26229→24203）全 5 位；完整流水线 exit 0 |
 | 08-28 17:2x | **M1b 突破：论坛接口打通** | `v2/feeds/stream?start=N&count=20&lottery=2`（lottery=2=排列五）无需登录返回 JSON：博主名+文字规律+图片URL（360/750/1024）；Chrome 151 无头模式验证可用（npmmirror/Google 下载失败→用户手动下载，已装 /data/zhenjie/chrome/） |
 | 08-28 17:2x | **视觉识别实测通过** | 视觉模型精确读出规律图（文字预测截图）各位置候选数字（万/千/百/十位）；识别管线验证完成 |
+| 08-28 17:4x | **GitHub 同步** | 服务器 9 个提交经 git bundle → Windows 推送 GitHub（d31499e..395b813）；容器 id_ed25519 未绑定 Wzj910997331（旧 id_rsa 属于 jinqinn），待用户添加公钥后服务器可直推 |
 | 08-28 15:0x | akshare 安装验证 | 1.18.88 装好但无 lottery 函数，弃用 |
 | 08-28 14:52 | 建立 .dev 监控机制 | 编排状态落盘，恢复指引写入 ORCHESTRATOR.md |
 | 08-28 14:4x | 编写开发指南 docs/DEV_GUIDE.md | 已提交 `6847467` |
