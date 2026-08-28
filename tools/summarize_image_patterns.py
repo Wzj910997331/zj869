@@ -65,27 +65,31 @@ def main():
             })
     print("有效图片规律条目:", len(records))
 
-    # 命中判定
+    # 命中判定（严格：仅"明确预测指向"的标注才算；无位置组合不判）
+    PREDICT_KW = ("26230", "预测", "候选", "看好", "主攻", "防", "底部", "下期",
+                  "标注", "预测行", "杀", "红框", "蓝框", "胆")
+
     def hit(r):
+        desc = r["desc"]
+        if not any(k in desc for k in PREDICT_KW):
+            return False  # 历史走势回顾/描述，非预测
         nums = r["numbers"]
+        pmap = {"万位": 0, "千位": 1, "百位": 2, "十位": 3, "个位": 4,
+                "头": 0, "尾": 4}
+        pos = None
+        pm = r["position"]
+        if pm in pmap:
+            pos = pmap[pm]
+        elif pm and "第" in str(pm):
+            for i in range(1, 6):
+                if str(i) in str(pm):
+                    pos = i - 1
         if r["type"] == "杀号":
             return all(n not in d for n in nums)
-        if r["type"] in ("定位", "头", "尾"):
-            pos = None
-            pm = r["position"]
-            pmap = {"万位": 0, "千位": 1, "百位": 2, "十位": 3, "个位": 4,
-                    "头": 0, "尾": 4}
-            if pm in pmap:
-                pos = pmap[pm]
-            elif pm and "第" in str(pm):
-                for i in range(1, 6):
-                    if str(i) in str(pm):
-                        pos = i - 1
+        if r["type"] in ("定位", "头", "尾", "胆码"):
             if pos is None:
-                return False
+                return False  # 无位置（组合/铁卒类）不算位置命中
             return d[pos] in nums
-        if r["type"] == "胆码":
-            return bool(set(nums) & set(d))
         return False
 
     for r in records:
