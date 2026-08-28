@@ -27,7 +27,9 @@
 - [x] 开发指南 `docs/DEV_GUIDE.md`
 - [x] **历史数据源验证**：500彩票网 `inc/history.php?limit=730` = 2年730期 ✅（详见方案文档）
 - [x] **M1a 实现**：`collector.py::_fetch_history()` 接 500 彩票网真实排列5数据，730期实测跑通，全流水线 exit 0 ✅
-- [ ] M1b 博主规律采集：**gouli99 站点分析完成**（API 已定位；登录需签名 → 无头浏览器方案；Playwright 安装中）
+- [x] **M1b 接口打通**：gouli99 论坛 API `v2/feeds/stream?lottery=2`（排列五）无需登录返回 JSON；Chrome 151 无头可用；视觉识别实测可读出规律图数字 ✅
+- [ ] M1b 爬虫实现：分页抓帖 + 下载图片 + 登录（VIP内容）
+- [ ] M1c 视觉识别批量管线 → 结构化入库
 - [ ] M2 规律分类+回测
 - [ ] M3 决策闭环
 
