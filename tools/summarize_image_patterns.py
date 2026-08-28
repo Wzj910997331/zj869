@@ -40,7 +40,8 @@ def main():
                 return p.get("creator", {}).get("name", "?")
         return "未知"
 
-    # 收集有效图片规律（只保留走势图/规律图 + 有内容的规律）
+    # 收集有效图片规律（第一层过滤：只保留"走势图圈选"——博主在历史走势图上画了规律；
+    # 杀号表/文字截图不算"画规律"，排除）
     records = []  # {blogger, file, type, position, numbers, desc, img_type}
     img_count = Counter()
     for v in vision:
@@ -48,7 +49,7 @@ def main():
         itype = v.get("type", "?")
         img_count[itype] += 1
         pats = v.get("patterns", [])
-        if itype not in ("走势图圈选", "杀号表", "文字预测截图"):
+        if itype != "走势图圈选":
             continue
         for p in pats:
             t = p.get("type", "")
@@ -123,11 +124,11 @@ def main():
     records_sorted = sorted(records, key=key_score, reverse=True)
 
     lines = ["# 图片规律总结报告（2026-08-28）", "",
-             "> 只统计博主在**图片**中画出的规律（走势图圈选/杀号表/文字预测截图），"
-             "不含文字帖随口内容。", f"> 26230 期开奖：**{' '.join(map(str, d))}**", "",
+             "> 严格过滤：仅统计博主在**走势图上画出的规律**（走势图圈选），"
+             "排除杀号表/文字截图/历史回顾；且要求明确预测指向 + 位置命中。",
+             f"> 26230 期开奖：**{' '.join(map(str, d))}**", "",
              "## 一、图片规律总览",
-             f"- 有效规律图：**{sum(img_count[t] for t in ('走势图圈选','杀号表','文字预测截图'))}** 张"
-             f"（走势图圈选 {img_count['走势图圈选']} / 杀号表 {img_count['杀号表']} / 文字预测截图 {img_count['文字预测截图']}）",
+             f"- 走势图圈选图：**{img_count['走势图圈选']}** 张",
              f"- 图片规律条目：**{len(records)}** 条，其中 26230 期命中 **{n_hit}** 条（{n_hit/max(len(records),1):.0%}）", "",
              "## 二、规律类型分布（图片）", "| 类型 | 条数 | 命中 | 命中率 |", "|---|---|---|---|"]
     for t, (c, h) in sorted(by_type_hit.items(), key=lambda x: -x[1][0]):
