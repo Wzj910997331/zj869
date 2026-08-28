@@ -10,6 +10,8 @@
    框架层提供模拟数据，保证流程可跑通
 """
 import random
+import re
+import urllib.request
 from typing import List, Tuple
 
 from agents.base import BaseAgent
@@ -48,23 +50,42 @@ class CollectorAgent(BaseAgent):
         return history, posts
 
     # ----------------------------------------------------------
-    # 历史数据抓取（替换为真实爬虫）
+    # 历史数据抓取（排列5真实数据）
     # ----------------------------------------------------------
     def _fetch_history(self, task: Task) -> List[HistoryRecord]:
         """
-        TODO: 替换为真实网站爬取逻辑
-        示例：生成模拟历史数据
+        从 500彩票网 datachart 抓取排列5真实历史开奖数据。
+
+        URL: https://datachart.500.com/plw/history/inc/history.php?limit=N
+        - 需浏览器 UA + Referer；响应为 gb2312 编码的 HTML 表格
+        - 数据行 <tr class="t_tr1">，列 = [摇奖用球/套, 期号, 号码(5位空格分隔),
+          和值, 总销售额, 开奖日期]
+        - 一次拉全量（如 730 期）偶发失败，重试即可（GitHub 同源项目验证）
         """
-        records = []
-        for i in range(task.history_periods):
-            period_num = 2026001 + i
-            # 模拟：7个数字，范围1-30
-            numbers = sorted(random.sample(range(1, 31), 7))
-            records.append(HistoryRecord(
-                period=str(period_num),
-                numbers=numbers,
-                date=f"2026-01-{i+1:02d}",
-            ))
+        limit = max(task.history_periods, 1)
+        url = f"https://datachart.500.com/plw/history/inc/history.php?limit={limit}"
+        req = urllib.request.Request(url, headers={
+            "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                           "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"),
+            "Referer": "https://datachart.500.com/plw/history/history.shtml",
+        })
+        raw = urllib.request.urlopen(req, timeout=30).read().decode("gb2312", errors="replace")
+
+        records: List[HistoryRecord] = []
+        for row in re.findall(r"<tr[^>]*>(.*?)</tr>", raw, re.S):
+            if "t_tr1" not in row:
+                continue
+            cells = [re.sub(r"<[^>]+>", "", c).strip()
+                     for c in re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)]
+            if len(cells) < 6:
+                continue
+            period, nums_str, date = cells[1], cells[2], cells[5]
+            numbers = [int(d) for d in re.findall(r"\d", nums_str)]
+            if len(numbers) == 5:
+                records.append(HistoryRecord(period=period, numbers=numbers, date=date))
+
+        if not records:
+            self.error("500彩票网采集失败：未解析到数据行")
         return records
 
     # ----------------------------------------------------------

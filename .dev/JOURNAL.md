@@ -12,8 +12,9 @@
 | 08-28 15:2x | 容器安装 Playwright+Chromium | 后台进行中（无头浏览器方案，绕过签名逆向） |
 | 08-28 15:3x | 视觉模型机制验证 | 主模型 deepseek-v4-flash 不支持图片；workflow 子代理 + `{provider:deepseek1, model:deepseek-v4-flash-vision-exp}` 可读图（read_image 实测准确） |
 | 08-28 15:3x | 子代理B调研完成（SPA登录+图片识别） | 结论：Playwright 登录取会话(storage_state)→拦截XHR找JSON API→requests批量；图片两阶段（PaddleOCR数字+VL语义）；参考 repo：hello-lottery/bilibili_comment_scraper_webui/Redbook-Search-Comment-MCP2.0/LlmOcr/lottery-crawler |
-| 08-28 15:3x | 子代理A调研中（彩票爬虫经验） | 运行中 |
+| 08-28 15:3x | 子代理A调研完成（彩票爬虫经验） | 确认 500彩票网 plw 接口=GitHub 排列3 爬虫同族；表格 tr[2:-1]；gbk 解码/重试/增量模式 |
 | 08-28 15:3x | 方案文档新增 M1b 详细设计 | 爬虫（Playwright+storage_state+拦截XHR）+ 识别（切图/PaddleOCR可选+视觉模型）写入 `docs/排列5M1方案.md` §7.5 |
+| 08-28 15:4x | **M1a 实现完成** | `collector.py::_fetch_history()` 接 500彩票网真实排列5数据；实测 730 期（26229→24203）全 5 位；完整流水线 exit 0 |
 | 08-28 15:0x | akshare 安装验证 | 1.18.88 装好但无 lottery 函数，弃用 |
 | 08-28 14:52 | 建立 .dev 监控机制 | 编排状态落盘，恢复指引写入 ORCHESTRATOR.md |
 | 08-28 14:4x | 编写开发指南 docs/DEV_GUIDE.md | 已提交 `6847467` |
