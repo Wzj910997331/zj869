@@ -5,3 +5,4 @@ __pycache__/
 
 # 运行产物（本地记忆库数据，若不想入库可取消注释）
 # vcp_memory.json
+/.venv/
