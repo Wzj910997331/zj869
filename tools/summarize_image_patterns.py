@@ -8,6 +8,7 @@
 """
 import json
 import os
+import re
 import sys
 from collections import Counter, defaultdict
 
@@ -72,6 +73,10 @@ def main():
 
     def hit(r):
         desc = r["desc"]
+        # 历史期标注（提及非 26230 的期号）→ 不是对 26230 的预测，排除
+        periods = re.findall(r"26\d{3}", desc)
+        if periods and all(p != "26230" for p in periods):
+            return False
         if not any(k in desc for k in PREDICT_KW):
             return False  # 历史走势回顾/描述，非预测
         nums = r["numbers"]
