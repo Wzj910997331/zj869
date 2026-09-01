@@ -56,6 +56,8 @@ def parse_position(pm):
     m = re.search(r"第?\s*([1-5])\s*[位]", pm)
     if m:
         return int(m.group(1)) - 1
+    if pm.isdigit() and int(pm) in range(5):
+        return int(pm)
     return None
 
 
@@ -112,10 +114,15 @@ def hit_record(rec, draw):
         return False
     if t == "数字串":
         return any(n in draw for n in nums)
-    if t in ("定位", "头", "尾", "胆码"):
+    if t in ("定位", "头", "尾"):
         if pos is None:
             return False
         return draw[pos] in nums
+    if t == "胆码":
+        if pos is not None:
+            return draw[pos] in nums
+        # 跨位置胆码：预测某数字会出现在开奖中
+        return any(n in draw for n in nums)
     return False
 
 

@@ -1,27 +1,36 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Stage 4：裁剪图 → 视觉大模型（glm-5.3-flash）读数字 + 规律分析
+Stage 4：裁剪图 → 视觉模型读数字 + 规则候选 + 模型选择规律
 
-流程（每图）：
-1. 读 crops_manifest.json，取标注行栈（快路径，默认）或全行栈。
-2. 调视觉大模型（OpenAI /v1/chat/completions，base64 图），一次返回 JSON：
-   rows（逐行读数） / annotations（博主画了什么） / patterns（提炼规律）/ img_type。
-3. 自校正：rows 读数与 lottery_recent 逐期精确匹配 → row→period 映射；
-   row0 用已知最新期锚定；无唯一匹配的行标 untrusted。
-4. 规律命中：对目标期 draw 跑 hit()，附 blogger/file。
-5. 落盘 patterns.json + docs 图片规律识别报告。
+关键发现（实测）：
+- 网关 llm.riverbegin.cn 的模型（glm-5.3-flash / deepseek-v4-flash）都是**始终思考**型：
+  开放式"从彩票数字找规律 / 从候选里挑选"任务会推理死循环、max_tokens 全被隐藏 reasoning
+  吃光、内容为空（12 候选 4000mt、reasoning_effort=low 均试过）。
+- 只有**受限小任务**能稳定终止：glm 视觉读数字（10/10 行 5/5 精确）、deepseek 一句话叙事概括（~2s）。
+- deepseek-v4-flash 无视觉能力（读图全 null），glm 有。
+
+因此本阶段架构（每图）：
+1. **视觉读数字**（glm-5.3-flash，默认）：标注行栈/全行栈 → 逐行读出 5 位数；
+   与 lottery_recent 精确匹配自校正 → row→期号映射（row0 锚定目标期）。
+2. **规则引擎提候选 + 确定性选 top-3**（无 LLM、精确）：从匹配行提取 斜连/定位/和值/胆码/杀号/
+   头/尾/数字串 候选，按支持度 + 博主色带覆盖位置提权排序取前 3。数字全部来自真实开奖，不臆造。
+3. **叙事总结**（deepseek-v4-flash，默认，~2s）：对确定的规律做一句话中文概括（大模型规律分析落点）；
+   失败则跳过，规律不受影响。
+4. **hit() 校验** + 落盘 patterns.json + docs 报告。
 
 用法：
   /usr/bin/python3 modules/image_recognize/stage4_llm.py \
     --manifest data/recognize/<blogger>/<date>/manifest.json \
-    [--model glm-5.3-flash] [--mode fast|full] [--timeout 300]
+    [--model glm-5.3-flash] [--analysis-model deepseek-v4-flash] \
+    [--mode fast|full] [--timeout 300]
 """
 import argparse
 import base64
 import json
 import os
 import re
+import socket
 import sys
 import time
 import urllib.request
@@ -34,8 +43,9 @@ DEFAULT_MODEL = "glm-5.3-flash"
 VALID_TYPES = {"定位", "斜连", "胆码", "头", "尾", "和值", "杀号", "数字串", "其他"}
 
 
-def call_llm(model, messages, max_tokens=3000, timeout=300):
-    """调 OpenAI chat/completions。429/5xx 指数退避×3。返回内容字符串。"""
+def call_llm(model, messages, max_tokens=3000, timeout=180):
+    """调 OpenAI chat/completions。429/5xx 指数退避×3；空输出/网络异常重试×3。
+    返回内容字符串（可能为 None）。"""
     body = json.dumps({"model": model, "messages": messages,
                        "max_tokens": max_tokens}).encode()
     url = f"{BASE_URL}/v1/chat/completions"
@@ -49,16 +59,19 @@ def call_llm(model, messages, max_tokens=3000, timeout=300):
             content = j["choices"][0]["message"].get("content", "")
             if content:
                 return content
-            print(f"[stage4] 空输出（推理用尽 max_tokens），重试 {attempt + 1}/4")
+            print(f"[llm] 空输出（推理/截断），重试 {attempt + 1}/4")
         except urllib.error.HTTPError as e:
             if e.code in (429, 500, 502, 503, 504):
                 wait = 10 * (2 ** attempt)
-                print(f"[stage4] HTTP {e.code}，退避 {wait}s")
+                print(f"[llm] HTTP {e.code}，退避 {wait}s")
                 time.sleep(wait)
                 continue
             raise
+        except socket.timeout as e:
+            print(f"[llm] 超时 {timeout}s（{model}），重试 {attempt + 1}/4")
+            time.sleep(5)
         except Exception as e:
-            print(f"[stage4] 网络异常: {e}，重试 {attempt + 1}/4")
+            print(f"[llm] 网络异常: {e}，重试 {attempt + 1}/4")
             time.sleep(5)
     return None
 
@@ -110,7 +123,8 @@ def normalize_rows(raw_rows, target_period, target_draw):
         if not re.fullmatch(r"row\d+", str(k)):
             continue
         i = int(k[3:])
-        if not isinstance(v, list) or len(v) != 5:
+        # 行内任一数字为 null（模型只读清部分）→ 整行不可靠，防 int(None) 崩溃
+        if not isinstance(v, list) or len(v) != 5 or any(x is None for x in v):
             out[i] = {"read": v if isinstance(v, list) else None, "matched": False}
             continue
         out[i] = {"read": [int(x) for x in v]}
@@ -118,26 +132,28 @@ def normalize_rows(raw_rows, target_period, target_draw):
 
 
 def self_correct(rows_read, lottery, target_period, target_draw):
-    """row→period 映射：row0 锚定最新期；其余行按读数在 lottery 精确匹配。
-    返回 {row: {"period", "draw", "read", "matched"}}。"""
+    """row→period 映射：每行按读数在 lottery 唯一精确匹配，**不预设行序**。
+
+    实测（2026-09-01）：小屁股 / 生活很无奈 的走势图均为"最新在底部"，
+    row0 是最旧期（小屁股 row0=26219，生活很无奈 row0≈26217），
+    而目标期（最新开奖）位于图最下方、常为预填空行。旧版把 row0 硬锚
+    为目标期导致整列错位（映射全是假匹配）。现改为纯读数匹配。
+
+    返回 {row: {"period", "draw", "read", "matched"}}。
+    """
     byval = {}
     for p in lottery:
         nums = tuple(int(x) for x in p.get("numbers", []))
         byval.setdefault(nums, []).append(str(p.get("period", "")))
     out = {}
-    # row0 锚定始终存在（目标期），即使模型未读取
-    out[0] = {"period": target_period, "draw": target_draw,
-              "read": target_draw, "matched": True, "anchor": True}
     for i, info in rows_read.items():
-        if i == 0:
-            continue
         read = info.get("read")
+        if not read:
+            out[i] = {"period": None, "draw": None, "read": None, "matched": False}
+            continue
         if target_draw and read == target_draw:
             out[i] = {"period": target_period, "draw": target_draw,
                       "read": read, "matched": True, "anchor": True}
-            continue
-        if not read:
-            out[i] = {"period": None, "draw": None, "read": None, "matched": False}
             continue
         per = byval.get(tuple(read), [])
         if len(per) == 1:
@@ -149,38 +165,14 @@ def self_correct(rows_read, lottery, target_period, target_draw):
     return out
 
 
-def normalize_patterns(raw_patterns, blogger, file, img_type):
-    """把模型 patterns 规整到 schema 记录，跑 hit()。非法条目丢弃并计数。"""
-    out = []
-    skipped = 0
-    for p in raw_patterns or []:
-        if not isinstance(p, dict):
-            skipped += 1
-            continue
-        t = str(p.get("type", "")).strip()
-        if t not in VALID_TYPES:
-            t = "其他"
-        nums = p.get("numbers")
-        if isinstance(nums, int):
-            nums = [nums]
-        nums = [int(x) for x in (nums or []) if str(x).isdigit()]
-        if not nums:
-            skipped += 1
-            continue
-        pos = parse_position(p.get("position"))
-        desc = str(p.get("desc", "")).strip()
-        out.append({"blogger": blogger, "file": file, "type": t,
-                    "position": pos, "numbers": nums,
-                    "desc": desc or None, "img_type": img_type})
-    return out, skipped
-
-
 def build_read_prompt(target_period, target_draw, n_rows):
     """视觉读数字 prompt（实测 glm-5.3-flash 3000 max_tokens 精确读 10/10 行）。
-    只读数字，不带规律分析（塞在一起会把推理 max_tokens 吃光返回空）。"""
+    只读数字，不带规律分析（塞在一起会把推理 max_tokens 吃光返回空）。
+    注意：不预设 row0 是目标期——实测走势图行序是"最新在底部"（row0 最旧、
+    rowN 最新），全部行都要读，由 self_correct 按读数匹配 lottery。"""
     return f"""你是排列5走势图分析师。下面这张图是博主标注过的走势图局部，每行左侧有红色行标签 rowN。
-最新一期开奖：{target_period} = {target_draw}（万/千/百/十/个位），它就是 row0，位于最上方，无需读取。
-图中 row1..row{max(n_rows - 1, 1)} 是更早各期，按原图顺序排列。
+最新一期开奖（参考）：{target_period} = {target_draw}（万/千/百/十/个位）。
+图中 row0..row{max(n_rows - 1, 1)} 是各历史期，按原图顺序排列（行标签越大的越靠下）。
 
 任务：逐行精确读出每个数字（万/千/百/十/个 共5个），博主画的色带可能盖住部分数字，透过色带仍可辨认；读不清的行给 null。
 只输出一个合法 JSON，格式严格如下（不要任何多余文字/代码块）：
@@ -188,35 +180,109 @@ def build_read_prompt(target_period, target_draw, n_rows):
 positions 顺序固定为 [万位,千位,百位,十位,个位]。"""
 
 
-def build_analyze_prompt(target_period, target_draw, rows_text, anno_desc):
-    """纯文本规律分析 prompt：数字已由视觉阶段读出，此处只做数字规律推导。
-    无图 → 输入小、推理轻、快且不臆造数字。"""
-    return f"""你是排列5走势图分析师。博主在小屁股_483847515 的走势图上做了标注，下面是读出的各期开奖数字（万/千/百/十/个）：
-{rows_text}
-
-博主标注情况：
-{anno_desc or "无标注行"}
-
-最新一期 {target_period} = {target_draw}（这是要预测/分析的目标期）。
-
-任务：从上述数字中提炼博主可能依据的规律。每条 type ∈ 定位/斜连/胆码/头/尾/和值/杀号/数字串/其他，
-numbers 必须是上表**真实出现的数字**，desc 用一句话说明依据（例如"万位近5期 9,4,6,8,3 含 4-8 斜连"）。
-只输出一个合法 JSON，格式严格如下（不要任何多余文字/代码块）：
-{{"patterns": [{{"type": "斜连", "position": 2, "numbers": [4,8], "desc": "百位连续两期 4→8"}}]}}
-position 编码：0=万位 1=千位 2=百位 3=十位 4=个位；不限位置的规律 position 给 null。"""
+POS_NAMES = ["万", "千", "百", "十", "个"]
 
 
-def format_rows_text(mapping):
-    """self_correct 后的映射 → 供文本分析的期号-数字表。"""
-    lines = []
-    for i in sorted(mapping, key=int):
-        v = mapping[i]
-        if v.get("matched") and v.get("draw"):
-            lines.append(f"row{i} {v['period']} = {''.join(str(x) for x in v['draw'])}")
-    return "\n".join(lines) or "（无匹配行）"
+def extract_candidates(mapping, anno_pos):
+    """确定性规则引擎：从匹配行提取规律候选（支持度排序、标注位置提权）。
+    无 LLM、数字全部来自真实开奖。anno_pos: {row: [pos,...]}。
+    返回最多 12 条 {type, position, numbers, support, desc[, anno]}。"""
+    from collections import Counter
+    # 匹配行按期号升序（chronological）排列——不依赖 row 索引方向，
+    # 对"最新在顶/在底"两种走势图都成立；seq[-1] 恒为最近期。
+    rows = []
+    for i, v in mapping.items():
+        if v.get("matched") and v.get("draw") and v.get("period"):
+            rows.append(v)
+    rows.sort(key=lambda v: int(v["period"]))
+    cands = []
+    n = len(rows)
+    if n < 3:
+        return cands
+    for p in range(5):
+        seq = [v["draw"][p] for v in rows]
+        # 等差斜连（近3期连续）
+        if n >= 3:
+            d1, d2 = seq[-1] - seq[-2], seq[-2] - seq[-3]
+            if d1 == d2 and d1 != 0:
+                cands.append({"type": "斜连", "position": p, "numbers": [seq[-1]],
+                              "support": 3,
+                              "desc": f"{POS_NAMES[p]}位近3期 {seq[-3]},{seq[-2]},{seq[-1]} 等差 {d1:+d}"})
+        # 相邻相连（近2期差±1）
+        if n >= 2 and abs(seq[-1] - seq[-2]) == 1:
+            cands.append({"type": "斜连", "position": p, "numbers": [seq[-2], seq[-1]],
+                          "support": 2, "desc": f"{POS_NAMES[p]}位近2期 {seq[-2]}→{seq[-1]} 相连"})
+        # 定位热号
+        hot = Counter(seq).most_common(1)[0]
+        if hot[1] >= 2:
+            cands.append({"type": "定位", "position": p, "numbers": [hot[0]],
+                          "support": hot[1], "desc": f"{POS_NAMES[p]}位 {hot[0]} 出现 {hot[1]}/{n} 期"})
+    # 和值
+    sums = [sum(v["draw"]) for v in rows]
+    sc = Counter(sums)
+    for s, c in sc.most_common(3):
+        if c >= 2:
+            cands.append({"type": "和值", "position": None, "numbers": [s],
+                          "support": c, "desc": f"和值 {s} 出现 {c}/{n} 期"})
+    # 胆码（跨位置高频）
+    dc = Counter(d for v in rows for d in v["draw"])
+    for d, c in dc.most_common(4):
+        if c >= 3:
+            cands.append({"type": "胆码", "position": None, "numbers": [d],
+                          "support": c, "desc": f"数字 {d} 跨位置出现 {c}/{n*5} 次"})
+    # 杀号（近5期未出现）
+    recent = rows[-5:]
+    present = set(d for v in recent for d in v["draw"])
+    absent = [d for d in range(10) if d not in present]
+    if absent:
+        cands.append({"type": "杀号", "position": None, "numbers": absent,
+                      "support": 1, "desc": f"近{len(recent)}期未出现"})
+    # 头/尾
+    for p, name in ((0, "头"), (4, "尾")):
+        c = Counter(v["draw"][p] for v in rows).most_common(1)[0]
+        if c[1] >= 2:
+            cands.append({"type": name, "position": p, "numbers": [c[0]],
+                          "support": c[1], "desc": f"{name}位 {c[0]} 出现 {c[1]} 期"})
+    # 数字串（相邻行 2-3 位重叠）
+    for i in range(1, n):
+        a, b = rows[i - 1]["draw"], rows[i]["draw"]
+        for L in (2, 3):
+            for j in range(5 - L + 1):
+                if a[j:j + L] == b[j:j + L]:
+                    cands.append({"type": "数字串", "position": j + L - 1,
+                                  "numbers": list(a[j:j + L]), "support": 2,
+                                  "desc": f"相邻两期 位置{j+1} 起 {L} 位相同 {''.join(map(str, a[j:j+L]))}"})
+    # 去重 + 标注提权 + 排序
+    seen, uniq = set(), []
+    for c in cands:
+        k = (c["type"], c.get("position"), tuple(c["numbers"]))
+        if k in seen:
+            continue
+        seen.add(k)
+        uniq.append(c)
+    anno_flat = {p for pos in anno_pos.values() for p in pos}
+    for c in uniq:
+        if c.get("position") in anno_flat:
+            c["support"] += 2
+            c["anno"] = True
+    uniq.sort(key=lambda c: (-c["support"], c["type"]))
+    return uniq[:12]
 
 
-def process_one(manifest, img_name, info, out_dir, model, mode, timeout, lottery):
+def build_narrative_prompt(target_period, target_draw, patterns, anno_desc):
+    """叙事总结 prompt：对已确定的规律做一句话概括（小输入、确定性任务，
+    推理模型能终止 ~2s；开放式"找规律"会死循环，所以只在事后做概括）。"""
+    lines = [f"{i + 1}) [{p['type']}] {POS_NAMES[p['position']] if p.get('position') is not None else '全位'} "
+             f"数字{p['numbers']}：{p.get('desc', '')}"
+             for i, p in enumerate(patterns)]
+    return f"""以下是程序从某博主走势图标注区识别的规律（数字均来自真实开奖）：
+{chr(10).join(lines)}
+{anno_desc or ''}
+最新一期 {target_period} = {target_draw}。
+请用一句话（不超过40字）概括这些规律反映的数字趋势，直接输出这句话，不要推理过程、不要输出JSON。"""
+
+
+def process_one(manifest, img_name, info, out_dir, model, analysis_model, mode, timeout, lottery):
     stem = os.path.splitext(img_name)[0]
     crops_dir = os.path.join(out_dir, "crops", stem)
     if mode == "full":
@@ -229,12 +295,12 @@ def process_one(manifest, img_name, info, out_dir, model, mode, timeout, lottery
         img_path = os.path.join(out_dir, info.get("full_rows_file", ""))
     n_rows = len(info.get("filled_rows", []))
 
-    # Call A：视觉读数字（已验证可靠）
+    # Call A：视觉读数字（glm-5.3-flash，已验证精确；deepseek 无视觉能力）
     prompt = build_read_prompt(manifest["target_period"], manifest["target_draw"], n_rows)
     print(f"[stage4] {img_name}: 读数字（{os.path.basename(img_rel)}）...")
     t0 = time.time()
     content = call_llm(model, build_messages(prompt, img_path),
-                       max_tokens=3000, timeout=timeout)
+                       max_tokens=16000, timeout=timeout)
     if not content:
         return {"file": img_name, "error": "LLM 读数字失败", "images_used": [img_rel]}
     obj = parse_json(content)
@@ -245,48 +311,52 @@ def process_one(manifest, img_name, info, out_dir, model, mode, timeout, lottery
                                manifest["target_draw"])
     mapping = self_correct(rows_read, lottery, manifest["target_period"],
                            manifest["target_draw"])
-    rows_text = format_rows_text(mapping)
 
-    # Call B：纯文本规律分析（无图，快）
+    # 规则引擎提候选 + 确定性选择 top-3（支持度+标注提权；选择无 LLM，精确不臆造）
+    anno_pos = info.get("saturated_positions") or {}
+    candidates = extract_candidates(mapping, anno_pos)
     pos_names = ["万", "千", "百", "十", "个"]
     parts = []
-    for r, pos in sorted((info.get("saturated_positions") or {}).items(),
-                         key=lambda kv: int(kv[0])):
+    for r, pos in sorted(anno_pos.items(), key=lambda kv: int(kv[0])):
         parts.append(f"row{r} {','.join(pos_names[p] for p in pos)}位")
     anno_desc = "博主色带覆盖行：" + "；".join(parts) if parts else ""
-    print(f"[stage4] {img_name}: 规律分析（文本）...")
-    content = call_llm(model,
-                       [{"role": "user", "content": build_analyze_prompt(
-                           manifest["target_period"], manifest["target_draw"],
-                           rows_text, anno_desc)}],
-                       max_tokens=2000, timeout=timeout)
-    if not content:
-        return {"file": img_name, "error": "LLM 规律分析失败", "images_used": [img_rel]}
-    obj2 = parse_json(content)
-    if obj2 is None:
-        return {"file": img_name, "error": "规律分析 JSON 解析失败",
-                "raw": content[:800], "images_used": [img_rel]}
 
-    img_type = "走势图圈选"
-    patterns, skipped = normalize_patterns(
-        obj2.get("patterns"), manifest["blogger"], img_name, img_type)
+    selected = [{"type": c["type"], "position": c.get("position"),
+                 "numbers": c["numbers"], "desc": c.get("desc")}
+                for c in candidates[:3]]
+    patterns = run_hits(selected, manifest["target_draw"])
+
+    # Call B：叙事总结（deepseek-v4-flash，~2s；开放式规律推导会死循环，只做事后概括）
+    analysis_note = None
+    if patterns:
+        print(f"[stage4] {img_name}: 叙事总结（{analysis_model}）...")
+        content = call_llm(analysis_model,
+                           [{"role": "user", "content": build_narrative_prompt(
+                               manifest["target_period"], manifest["target_draw"],
+                               patterns, anno_desc)}],
+                           max_tokens=1000, timeout=timeout)
+        if content:
+            analysis_note = content.strip().strip('"').strip()[:200]
+        else:
+            print(f"[stage4]   {img_name}: 叙事失败（跳过，规律已落盘）")
+
     rec = {
         "file": img_name,
-        "img_type": img_type,
+        "img_type": "走势图圈选",
         "images_used": [img_rel],
+        "n_candidates": len(candidates),
+        "analysis_note": analysis_note,
         "rows": {str(i): v for i, v in mapping.items()},
         "annotations": [{"row": r, "positions": pos}
-                        for r, pos in sorted((info.get("saturated_positions") or {}).items(),
-                                             key=lambda kv: int(kv[0]))],
-        "patterns": run_hits(patterns, manifest["target_draw"]),
+                        for r, pos in sorted(anno_pos.items(), key=lambda kv: int(kv[0]))],
+        "patterns": patterns,
         "n_patterns": len(patterns),
-        "skipped_invalid": skipped,
         "llm_seconds": round(time.time() - t0, 1),
     }
     return rec
 
 
-def write_report(manifest, results, out_dir, model):
+def write_report(manifest, results, out_dir, model, analysis_model):
     """docs 报告（镜像 summarize_image_patterns 风格）。"""
     blog = manifest["blogger"]
     date = manifest["date"]
@@ -297,7 +367,7 @@ def write_report(manifest, results, out_dir, model):
         f"# 图片规律识别报告：{blog}（{date}）",
         "",
         f"- 目标期：{manifest['target_period']} = {manifest['target_draw']}",
-        f"- 视觉模型：{model}",
+        f"- 视觉读数字模型：{model}　规律选择模型：{analysis_model}",
         f"- 图片数：{len(manifest['images'])}",
         "",
         "## 各图识别结果",
@@ -312,7 +382,8 @@ def write_report(manifest, results, out_dir, model):
             lines.append(f"- ⚠️ 失败：{rec['error']}")
             lines.append("")
             continue
-        lines.append(f"- 图类型：{rec['img_type']}　LLM 耗时 {rec.get('llm_seconds', '?')}s")
+        lines.append(f"- 图类型：{rec['img_type']}　识别耗时 {rec.get('llm_seconds', '?')}s"
+                     f"　规则候选 {rec.get('n_candidates', 0)} 条")
         n_ok = sum(1 for v in rec["rows"].values() if v.get("matched"))
         n_tot = len(rec["rows"])
         lines.append(f"- 行读数自校正：{n_ok}/{n_tot} 行匹配 lottery")
@@ -320,21 +391,22 @@ def write_report(manifest, results, out_dir, model):
         if unk:
             lines.append(f"- 未匹配行：{unk}（读数不可靠，未参与分析）")
         if rec.get("annotations"):
-            pos_names = ["万", "千", "百", "十", "个"]
             lines.append("- 博主色带覆盖（视觉阶段确定性检测）：")
             for a in rec["annotations"]:
                 pos = a.get("positions")
-                pos_s = ",".join(pos_names[p] for p in pos) if pos else "?"
+                pos_s = ",".join(POS_NAMES[p] for p in pos) if pos else "?"
                 lines.append(f"  - {a.get('row')} 行：{pos_s}位")
-        lines.append("- 提炼规律：")
+        lines.append("- 提炼规律（规则候选 top-3 + 模型叙事 → hit 校验）：")
         if not rec["patterns"]:
             lines.append("  - 无")
         for p in rec["patterns"]:
             hit = "✅命中" if p.get("hit") else "未中"
             pos = p.get("position")
-            pos_s = f"位置{pos}({['万','千','百','十','个'][pos]})" if pos is not None else "全位"
+            pos_s = f"位置{pos}({POS_NAMES[pos]})" if pos is not None else "全位"
             lines.append(f"  - [{p['type']}] {pos_s} 数字{p['numbers']} {hit}"
                          f"{'　' + p['desc'] if p.get('desc') else ''}")
+        if rec.get("analysis_note"):
+            lines.append(f"- 模型解读：{rec['analysis_note']}")
         lines.append("")
     lines.append("---")
     lines.append("> 独立模块 image_recognize 自动生成；规律为模型从图中提取，仅供参考。")
@@ -345,9 +417,12 @@ def write_report(manifest, results, out_dir, model):
 
 def main():
     fix_print()
-    ap = argparse.ArgumentParser(description="Stage 4: 视觉大模型读图 + 规律分析")
+    ap = argparse.ArgumentParser(description="Stage 4: 视觉大模型读数字 + 规则候选 + 模型选择")
     ap.add_argument("--manifest", required=True)
-    ap.add_argument("--model", default=DEFAULT_MODEL)
+    ap.add_argument("--model", default=DEFAULT_MODEL,
+                    help="视觉读数字模型（glm-5.3-flash 已验证；需有视觉能力）")
+    ap.add_argument("--analysis-model", default="deepseek-v4-flash",
+                    help="叙事总结模型（glm 对规律任务推理死循环，默认 deepseek-v4-flash 快且稳）")
     ap.add_argument("--mode", choices=["fast", "full"], default="fast",
                     help="fast=仅标注行栈（快）；full=全行栈（准）")
     ap.add_argument("--timeout", type=int, default=300)
@@ -375,24 +450,32 @@ def main():
         if not info:
             results[name] = {"file": name, "error": "无裁剪信息"}
             continue
-        rec = process_one(manifest, name, info, out_dir, args.model,
-                          args.mode, args.timeout, lottery)
+        try:
+            rec = process_one(manifest, name, info, out_dir, args.model,
+                              args.analysis_model, args.mode, args.timeout, lottery)
+        except Exception as e:
+            # 单图异常隔离：不拖垮整批，其余图照常出结果
+            import traceback
+            traceback.print_exc()
+            rec = {"file": name, "error": f"处理异常: {e}"}
         results[name] = rec
         if rec.get("error"):
             print(f"[stage4]   {name}: 失败 {rec['error']}")
         else:
             n_ok = sum(1 for v in rec["rows"].values() if v.get("matched"))
             print(f"[stage4]   {name}: 行匹配 {n_ok}/{len(rec['rows'])} "
-                  f"规律 {rec['n_patterns']}（跳过非法 {rec['skipped_invalid']}）"
-                  f" {rec['llm_seconds']}s")
+                  f"候选 {rec['n_candidates']} → 规律 {rec['n_patterns']} "
+                  f"{rec['llm_seconds']}s")
 
     out = {"run_id": manifest["run_id"], "blogger": manifest["blogger"],
            "date": manifest["date"], "target_period": manifest["target_period"],
            "target_draw": manifest["target_draw"], "model": args.model,
-           "mode": args.mode, "images": results}
+           "analysis_model": args.analysis_model, "mode": args.mode,
+           "images": results}
     out_path = os.path.join(out_dir, "patterns.json")
     write_json(out, out_path)
-    report = write_report(manifest, results, out_dir, args.model)
+    report = write_report(manifest, results, out_dir, args.model,
+                          args.analysis_model)
     print(f"[stage4] -> {out_path}")
     print(f"[stage4] -> {report}")
 

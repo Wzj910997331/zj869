@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-导出"命中规律库"：从 image_patterns_with_blogger.json 提取本期(26230)命中记录，
-连同采集条数/命中率，写成 docs/规律/26230.json + 26230.md。
+导出"命中规律库"：从 image_patterns_with_blogger.json 提取本期命中记录，
+连同采集条数/命中率，写成 docs/规律/{period}.json + {period}.md。
 每期一个文件，规律累计可查。
+用法: python tools/export_rules.py --base data/crawl/20260829 --period 26231 --draw "1 8 7 9 9" --calib 26230 --calib-draw "9 4 6 8 3"
 """
+import argparse
 import json
 import os
 import sys
@@ -13,13 +15,13 @@ from collections import Counter
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE = os.path.join(REPO, "data", "crawl", "20260828")
-PATH = os.path.join(BASE, "image_patterns_with_blogger.json")
-OUT_DIR = os.path.join(REPO, "docs", "规律")
-os.makedirs(OUT_DIR, exist_ok=True)
 
-PERIOD = "26230"
-ACTUAL = {"万位": 9, "千位": 4, "百位": 6, "十位": 8, "个位": 3}
+
+def norm_pos(s):
+    """position 归一化：'万位'→'万'，兼容 summarize 单字输出与 GLM 重读的带位后缀。"""
+    if not s:
+        return s
+    return str(s).replace("位", "").strip()
 
 
 def real_hit(r):
@@ -27,6 +29,23 @@ def real_hit(r):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--base", required=True, help="data/crawl/YYYYMMDD")
+    ap.add_argument("--period", required=True, help="预测期号，如 26231")
+    ap.add_argument("--draw", required=True, help="本期开奖，如 '1 8 7 9 9'")
+    ap.add_argument("--calib", default="", help="校准期号，如 26230")
+    ap.add_argument("--calib-draw", default="", help="校准期开奖，如 '9 4 6 8 3'")
+    args = ap.parse_args()
+
+    BASE = os.path.join(REPO, "data", "crawl", args.base)
+    PATH = os.path.join(BASE, "image_patterns_with_blogger.json")
+    OUT_DIR = os.path.join(REPO, "docs", "规律")
+    os.makedirs(OUT_DIR, exist_ok=True)
+
+    PERIOD = args.period
+    DRAW = args.draw
+    ACTUAL = dict(zip(["万", "千", "百", "十", "个"], [int(x) for x in DRAW.split()]))
+    CALIB = f"{args.calib} = {args.calib_draw}" if args.calib_draw else ""
     data = json.load(open(PATH, encoding="utf-8"))
     hits = [r for r in data if real_hit(r)]
     rejected = [r for r in data if r.get("reject_reason")]
@@ -42,6 +61,7 @@ def main():
 
     n_total = len(data)
     n_hit = len(hits)
+    hit_rate = n_hit / n_total if n_total else 0
     full = [r for r in hits if r.get("multi") == "1位置1中"]
     n_full = len(full)
 
@@ -50,7 +70,7 @@ def main():
     for r in hits:
         rules.append({
             "period": PERIOD,
-            "draw": "9 4 6 8 3",
+            "draw": DRAW,
             "blogger": r.get("blogger"),
             "image": r.get("file"),
             "type": r.get("type"),
@@ -63,10 +83,10 @@ def main():
         })
     out = {
         "period": PERIOD,
-        "draw": "9 4 6 8 3",
+        "draw": DRAW,
         "total_records": n_total,
         "hit_records": n_hit,
-        "hit_rate": round(n_hit / n_total, 4) if n_total else 0,
+        "hit_rate": round(hit_rate, 4),
         "full_hits": n_full,
         "rejected": [{"blogger": r.get("blogger"), "reason": r.get("reject_reason")} for r in rejected],
         "rules": rules,
@@ -77,23 +97,26 @@ def main():
 
     # ---- Markdown ----
     L = []
-    L.append(f"# 命中规律库 — 26230 期")
+    L.append(f"# 命中规律库 — {PERIOD} 期")
     L.append("")
-    L.append(f"> 期号：**26230** ｜ 开奖：**9 4 6 8 3**（万 千 百 十 个）｜ 校准行 26229 = 2 8 0 5 4")
-    L.append(f"> 采集记录：**{n_total} 条** ｜ 命中：**{n_hit} 条（{n_hit/n_total:.2%}）** ｜ 完全命中（1位置1中）：{n_full} 条")
+    L.append(f"> 期号：**{PERIOD}** ｜ 开奖：**{DRAW}**（万 千 百 十 个）｜ 校准行 {CALIB}")
+    L.append(f"> 采集记录：**{n_total} 条** ｜ 命中：**{n_hit} 条（{hit_rate:.2%}）** ｜ 完全命中（1位置1中）：{n_full} 条")
     L.append(f"> 规律条数：**{len(rules)} 条**")
     L.append("")
     L.append("| 博主 | 命中位置 | 全图预测明细（各位置对错） | 博主画规规律逻辑 |")
     L.append("|---|---|---|---|")
     for r in hits:
         blogger = r.get("blogger")
-        t, pos, nums = r.get("type"), r.get("position"), r.get("numbers")
+        t, pos, nums = r.get("type"), norm_pos(r.get("position")), r.get("numbers")
         ns = ",".join(map(str, nums)) if nums else "?"
-        actual = ACTUAL.get(pos, "?")
-        main = f"{t} {pos}={ns} → 26230 {pos}={actual} ✓"
+        if pos in ACTUAL:  # 定位/头/尾等单位置：可对位展示
+            actual = ACTUAL[pos]
+            main = f"{t} {pos}={ns} → {PERIOD} {pos}={actual} ✓"
+        else:  # 胆码（全盘）/区间 position：无法单位置对位，标全盘命中
+            main = f"{t} {ns} → 全盘命中 ✓"
         details = []
         for p in r.get("predicted_positions") or []:
-            pp = p.get("位置", "?")
+            pp = norm_pos(p.get("位置", "?"))
             cand = ",".join(map(str, p.get("候选") or []))
             a = ACTUAL.get(pp, "?")
             ok = "✓" if (a is not None and a in (p.get("候选") or [])) else "✗"
@@ -111,7 +134,7 @@ def main():
         f.write("\n".join(L))
 
     print(f"规律库 → {OUT_DIR}/")
-    print(f"  采集 {n_total} 条 / 命中 {n_hit} ({n_hit/n_total:.2%}) / 完全命中 {n_full} / 规律 {len(rules)} 条")
+    print(f"  采集 {n_total} 条 / 命中 {n_hit} ({hit_rate:.2%}) / 完全命中 {n_full} / 规律 {len(rules)} 条")
     print(f"  剔除 {len(rejected)} 条: {[r.get('blogger') for r in rejected]}")
 
 

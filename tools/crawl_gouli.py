@@ -3,7 +3,8 @@
 够力论坛爬虫：爬取指定日期内排列五（lottery=2）的全部帖子（文字+图片）。
 - 数据源: https://wsqdata.gouli8.cn/v2/feeds/stream (公开接口，无需登录)
 - 输出: data/crawl/{YYYYMMDD}/posts.json + images/*.img + images_map.json
-- 用法: python tools/crawl_gouli.py [YYYY-MM-DD]   (默认 2026-08-28)
+- 用法: python tools/crawl_gouli.py [YYYY-MM-DD] [YYYY-MM-DD(end,可选)]   (默认 2026-08-28)
+- 传 end 日期时只抓 [start, end] 区间内的帖子（按 create_time 精确过滤）。
 """
 import datetime
 import json
@@ -28,7 +29,10 @@ def http_get(url, timeout=30):
 
 def main():
     date_str = sys.argv[1] if len(sys.argv) > 1 else "2026-08-28"
+    end_str = sys.argv[2] if len(sys.argv) > 2 else ""
     cutoff = datetime.datetime.strptime(date_str + " 00:00:00", "%Y-%m-%d %H:%M:%S")
+    end_cutoff = (datetime.datetime.strptime(end_str + " 23:59:59", "%Y-%m-%d %H:%M:%S")
+                  if end_str else None)
     out_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "..", "data", "crawl", date_str.replace("-", ""))
     img_dir = os.path.join(out_dir, "images")
@@ -57,7 +61,7 @@ def main():
                 continue
             if oldest is None or t < oldest:
                 oldest = t
-            if t >= cutoff:
+            if t >= cutoff and (end_cutoff is None or t <= end_cutoff):
                 posts.append(it)
         print(f"start={start} got={len(items)} oldest={oldest}")
         if not data.get("hasNext") or oldest is None or oldest < cutoff:

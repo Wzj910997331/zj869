@@ -92,6 +92,8 @@ def detect_rows(mg):
             inb = False
     if inb and len(proj) - y0 >= 15:
         bands.append((y0, len(proj) - 1))
+    if not bands:
+        raise RuntimeError("未检出数字行带（绿字非行网格分布，非走势图版式）")
     centers = [(a + b) // 2 for a, b in bands]
     # pitch = 相邻中心差中位数（筛 100-170）
     diffs = [b - a for a, b in zip(centers, centers[1:]) if 100 <= b - a <= 170]

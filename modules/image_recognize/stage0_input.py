@@ -33,7 +33,7 @@ def discover_images(blogger, date):
     img_dir = IMAGES_BASE.format(date=date_key)
     # 帖 id 形如 s_2_d7c7ef9e-...，图片名 = <id>_<idx>.png
     prefix = os.path.join(img_dir, target_id)
-    files = sorted(glob.glob(prefix + "_*.png")) or sorted(glob.glob(prefix + ".*.png"))
+    files = sorted(glob.glob(prefix + "_*.[pj][np][g]")) or sorted(glob.glob(prefix + ".*.[pj][np][g]"))
     return files
 
 
@@ -53,7 +53,7 @@ def main():
         files = [os.path.abspath(p) for p in args.images]
     else:
         files = discover_images(blogger, args.date)
-    files = [f for f in files if f.lower().endswith(".png")]
+    files = [f for f in files if f.lower().endswith((".png", ".jpg", ".jpeg"))]
     if not files:
         print(f"[stage0] ERROR: 未找到 {blogger} 的走势图图片（date={args.date}）")
         sys.exit(2)

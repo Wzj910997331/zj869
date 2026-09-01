@@ -9,3 +9,7 @@ __pycache__/
 
 # 爬取原始数据（图片等大文件不入库）
 /data/
+
+# 备份目录与难图归档（不入库）
+/docs_backup*/
+/hard_images_*/
