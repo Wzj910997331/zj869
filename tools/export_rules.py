@@ -25,7 +25,8 @@ def norm_pos(s):
 
 
 def real_hit(r):
-    return r.get("hit") and not (r.get("type") == "杀号" and not r.get("numbers"))
+    # 杀号（杀掉不开出的号码）不体现画规规律，一律不算命中。
+    return r.get("hit") and r.get("type") != "杀号"
 
 
 def main():
@@ -47,6 +48,8 @@ def main():
     ACTUAL = dict(zip(["万", "千", "百", "十", "个"], [int(x) for x in DRAW.split()]))
     CALIB = f"{args.calib} = {args.calib_draw}" if args.calib_draw else ""
     data = json.load(open(PATH, encoding="utf-8"))
+    # 杀号（杀掉不开出的号码）不体现画规规律，从采集与命中口径整体剔除
+    data = [r for r in data if r.get("type") != "杀号"]
     hits = [r for r in data if real_hit(r)]
     rejected = [r for r in data if r.get("reject_reason")]
     # 同博主多条 reject 记录去重（保留一条）

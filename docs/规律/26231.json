@@ -1,9 +1,9 @@
 {
  "period": "26231",
  "draw": "1 8 7 9 9",
- "total_records": 589,
- "hit_records": 108,
- "hit_rate": 0.1834,
+ "total_records": 556,
+ "hit_records": 98,
+ "hit_rate": 0.1763,
  "full_hits": 0,
  "rejected": [],
  "rules": [
@@ -52,21 +52,6 @@
    "hit_position": "十",
    "hit_numbers": [
     9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "海南五七学堂",
-   "image": "s_2_4ddb0e7f-474f-4495-81a8-5673d7772877_1.jpg",
-   "type": "杀号",
-   "hit_position": "十",
-   "hit_numbers": [
-    2
    ],
    "multi": null,
    "predicted_positions": null,
@@ -506,36 +491,6 @@
   {
    "period": "26231",
    "draw": "1 8 7 9 9",
-   "blogger": "安逸的花朵_0",
-   "image": "s_2_e29a7930-c8d9-4b3c-9763-67e2d54bca2f_2.jpg",
-   "type": "杀号",
-   "hit_position": "十",
-   "hit_numbers": [
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "安逸的花朵_0",
-   "image": "s_2_e29a7930-c8d9-4b3c-9763-67e2d54bca2f_3.jpg",
-   "type": "杀号",
-   "hit_position": "个",
-   "hit_numbers": [
-    4
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
    "blogger": "袁爽:五花肉",
    "image": "s_2_2e7db153-ed5c-46d4-a47f-8f965766b80e_2.jpg",
    "type": "胆码",
@@ -554,43 +509,12 @@
   {
    "period": "26231",
    "draw": "1 8 7 9 9",
-   "blogger": "安逸的花朵_0",
-   "image": "s_2_b7978ea9-be9c-458e-a858-315997ebfcc5_2.jpg",
-   "type": "杀号",
-   "hit_position": "万",
-   "hit_numbers": [
-    2,
-    5
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
    "blogger": "微时光",
    "image": "s_2_ece2f7dc-a96d-418d-a743-aa26949d4df9_2.jpg",
    "type": "胆码",
    "hit_position": null,
    "hit_numbers": [
     8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "安逸的花朵_0",
-   "image": "s_2_e29a7930-c8d9-4b3c-9763-67e2d54bca2f_0.jpg",
-   "type": "杀号",
-   "hit_position": "万",
-   "hit_numbers": [
-    0
    ],
    "multi": null,
    "predicted_positions": null,
@@ -746,21 +670,6 @@
     5,
     7,
     8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_56f8506e-50da-45c7-90d8-6e2cb1c9e9c2_0.jpg",
-   "type": "杀号",
-   "hit_position": "百",
-   "hit_numbers": [
-    4
    ],
    "multi": null,
    "predicted_positions": null,
@@ -1180,21 +1089,6 @@
   {
    "period": "26231",
    "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_56f8506e-50da-45c7-90d8-6e2cb1c9e9c2_4.jpg",
-   "type": "杀号",
-   "hit_position": "万",
-   "hit_numbers": [
-    4
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
    "blogger": "吴总2",
    "image": "s_2_74c62b3b-c7fe-446f-9d1e-df7f1c37a436_8.jpg",
    "type": "头",
@@ -1304,21 +1198,6 @@
    "period": "26231",
    "draw": "1 8 7 9 9",
    "blogger": "吴总2",
-   "image": "s_2_64f3a72c-dbca-4b17-a64c-b10da20100cc_1.jpg",
-   "type": "杀号",
-   "hit_position": "百",
-   "hit_numbers": [
-    6
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
    "image": "s_2_74c62b3b-c7fe-446f-9d1e-df7f1c37a436_0.jpg",
    "type": "尾",
    "hit_position": "个",
@@ -1353,22 +1232,6 @@
     6,
     7,
     9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "484946079",
-   "image": "s_2_4a3391f9-9609-4766-97d9-88ae36bcd9aa_0.jpg",
-   "type": "杀号",
-   "hit_position": null,
-   "hit_numbers": [
-    0,
-    5
    ],
    "multi": null,
    "predicted_positions": null,
@@ -1427,21 +1290,6 @@
     5,
     6,
     8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "用户_484732811",
-   "image": "s_2_bef7714f-120b-4197-937c-94b56f24acf8_0.jpeg",
-   "type": "杀号",
-   "hit_position": "万",
-   "hit_numbers": [
-    3
    ],
    "multi": null,
    "predicted_positions": null,
@@ -1966,5 +1814,5 @@
    "logic": null
   }
  ],
- "rule_count": 108
+ "rule_count": 98
 }

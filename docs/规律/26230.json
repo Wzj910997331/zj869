@@ -1,9 +1,9 @@
 {
  "period": "26230",
  "draw": "9 4 6 8 3",
- "total_records": 698,
+ "total_records": 694,
  "hit_records": 18,
- "hit_rate": 0.0258,
+ "hit_rate": 0.0259,
  "full_hits": 3,
  "rejected": [
   {
