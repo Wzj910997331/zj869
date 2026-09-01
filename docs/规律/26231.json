@@ -1,9 +1,9 @@
 {
  "period": "26231",
  "draw": "1 8 7 9 9",
- "total_records": 556,
- "hit_records": 98,
- "hit_rate": 0.1763,
+ "total_records": 551,
+ "hit_records": 96,
+ "hit_rate": 0.1742,
  "full_hits": 0,
  "rejected": [],
  "rules": [
@@ -621,21 +621,6 @@
    "hit_numbers": [
     1,
     6
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_f4016857-5328-4689-bc73-601776298329_8.jpg",
-   "type": "胆码",
-   "hit_position": "百",
-   "hit_numbers": [
-    8
    ],
    "multi": null,
    "predicted_positions": null,
@@ -1588,21 +1573,6 @@
   {
    "period": "26231",
    "draw": "1 8 7 9 9",
-   "blogger": "_政_0",
-   "image": "s_2_c1eb1fc2-2371-4a28-8049-1de2e4356400_0.jpg",
-   "type": "胆码",
-   "hit_position": "千",
-   "hit_numbers": [
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
    "blogger": "_周小小",
    "image": "s_2_de87969e-4fbb-40ec-a578-ed02ead985c8_0.jpg",
    "type": "头",
@@ -1814,5 +1784,5 @@
    "logic": null
   }
  ],
- "rule_count": 98
+ "rule_count": 96
 }
