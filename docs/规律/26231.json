@@ -1,9 +1,9 @@
 {
  "period": "26231",
  "draw": "1 8 7 9 9",
- "total_records": 552,
- "hit_records": 97,
- "hit_rate": 0.1757,
+ "total_records": 551,
+ "hit_records": 96,
+ "hit_rate": 0.1742,
  "full_hits": 0,
  "rejected": [],
  "rules": [
@@ -1782,22 +1782,7 @@
    "predicted_positions": null,
    "pos_check": null,
    "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_f4016857-5328-4689-bc73-601776298329_8.jpg",
-   "type": "胆码",
-   "hit_position": "百",
-   "hit_numbers": [
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
   }
  ],
- "rule_count": 97
+ "rule_count": 96
 }
