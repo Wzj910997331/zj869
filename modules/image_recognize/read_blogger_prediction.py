@@ -248,7 +248,13 @@ def one_batch(batch, api_ctx):
         {"type": "text", "text": prompt},
         {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}}]}]
     model = api_ctx.get("model", DS.GLM_MODEL)
-    raw = DS.call_llm(model, msgs, max_tokens=16000, timeout=max(240, 45 * n))
+    if api_ctx.get("auto"):
+        # 2026-09-02：网关有界自动切换。单次调用超时/断连/空返 → glm→ds 换家，绝不 4 次重试拖批
+        raw, used = DS.call_vision_auto(msgs, providers=("glm", "ds"),
+                                        max_tokens=16000, timeout=max(240, 45 * n))
+        model = f"auto({used})" if raw else "auto(glm→ds均失败)"
+    else:
+        raw = DS.call_llm(model, msgs, max_tokens=16000, timeout=max(240, 45 * n))
     files = [b[1] for b in batch]
     out = {f: {"file": f, "blogger": b[4]} for f, b in zip(files, batch)}
     if not raw:
@@ -304,7 +310,8 @@ def main():
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--model", default="glm",
-                    help="视觉模型：glm(默认 glm-5.3-flash，位准) 或 ds(deepseek-v4-flash-vision)")
+                    help="视觉模型：glm(默认 glm-5.3-flash，位准) / ds(deepseek-v4-flash-vision) / "
+                         "auto(自动切换 glm→ds：每家单次有界，超时/断连/空返换家)")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--cutoff", default="21:30",
@@ -370,8 +377,15 @@ def main():
         for p in read_json(args.out).get("predictions", []):
             existing[os.path.splitext(p["file"])[0]] = p
 
-    model = DS.GLM_MODEL if args.model.lower().startswith("g") else DS.DS_MODEL
-    api_ctx = {"strips_dir": args.strips, "fr": fr, "period": args.period, "model": model}
+    m = args.model.lower()
+    if m.startswith("a"):
+        model = "auto(glm→ds)"       # 展示用；实际每批在 one_batch 里换家并回填 auto(<家>)
+        api_ctx = {"strips_dir": args.strips, "fr": fr, "period": args.period,
+                   "model": DS.GLM_MODEL, "auto": True}
+        print("--model auto：视觉自动切换 glm→ds（每家单次有界，超时/断连/空返换家，不重试）")
+    else:
+        model = DS.GLM_MODEL if m.startswith("g") else DS.DS_MODEL
+        api_ctx = {"strips_dir": args.strips, "fr": fr, "period": args.period, "model": model}
     if args.calib and args.calib_draw:
         api_ctx["calib"] = (args.calib, args.calib_draw)
     results = {}

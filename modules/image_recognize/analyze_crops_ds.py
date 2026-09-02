@@ -90,6 +90,77 @@ def call_ds_vision(messages, timeout=45, max_tokens=16000):
         return None
 
 
+PROVIDER_MODEL = {"ds": DS_MODEL, "glm": GLM_MODEL}
+
+
+def _chat_once(model, messages, timeout, max_tokens):
+    """单次有界 OpenAI chat/completions（**不重试**）。返回 (content, None) 或 (None, 失败类)。
+
+    失败类（供上层决定是否换 provider）：
+      conn   = 网关断连/过载(429/5xx/refused/reset) → 换家可救
+      timeout= 模型真慢/"始终思考"死循环 → 换家可救
+      empty  = 空返/非网络异常 → 换家多半仍空，只记一次
+    """
+    body = json.dumps({"model": model, "messages": messages,
+                       "max_tokens": max_tokens}).encode()
+    req = urllib.request.Request(f"{BASE_URL}/v1/chat/completions", data=body, headers={
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {AUTH_TOKEN}"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            j = json.loads(r.read())
+        content = j["choices"][0]["message"].get("content", "")
+        return (content if content else None), (None if content else "empty")
+    except Exception as e:
+        msg = str(e)
+        reason = getattr(e, "reason", None)
+        conn_types = (ConnectionRefusedError, ConnectionResetError, BrokenPipeError,
+                      ConnectionAbortedError)
+        is_conn = (isinstance(reason, conn_types) or
+                   isinstance(e, OSError) and getattr(e, "errno", None) in (104, 111, 32, 54) or
+                   "Connection refused" in msg or "Connection reset" in msg or
+                   "Remote end closed connection" in msg or "Connection aborted" in msg)
+        if is_conn:
+            return None, "conn"
+        if isinstance(e, (TimeoutError, socket.timeout)) or "timed out" in msg.lower():
+            return None, "timeout"
+        if isinstance(e, urllib.error.HTTPError) and e.code in (429, 500, 502, 503, 504):
+            return None, "conn"
+        return None, "empty"
+
+
+def call_vision_auto(messages, providers=("glm", "ds"), timeout=90, max_tokens=16000,
+                     verbose=True):
+    """视觉模型自动切换：每家 provider **单次有界**调用（绝不重试，防"始终思考"死循环拖 5-20 分钟）。
+
+    每次调用失败按 _chat_once 归类（conn=网关断连/timeout=模型超时/empty=空返）→ 换下一个 provider。
+    providers 顺序 = 优先顺序。默认 ("glm","ds")：glm 布局/位读更准优先，ds 兜底（2026-09-02 用户要求
+    "超时后判断是否 AI 网关超时，超时就换 ds 或 glm"）。
+    全部失败 → 返回 (None, 最后一个 provider)。
+    """
+    if isinstance(providers, str):
+        providers = tuple(p.strip() for p in providers.split(",") if p.strip())
+    if not providers:
+        providers = ("glm", "ds")
+    trace = []
+    for i, name in enumerate(providers):
+        model = PROVIDER_MODEL.get(name.strip().lower())
+        if not model:
+            continue
+        content, fail = _chat_once(model, messages, timeout, max_tokens)
+        if content:
+            if verbose:
+                print(f"    [vision-auto] {name}({model}) 成功，{timeout}s 上限内")
+            return content, name.strip().lower()
+        trace.append(f"{name}:{fail}")
+        if verbose:
+            nxt = providers[i + 1] if i + 1 < len(providers) else "无家可换"
+            print(f"    [vision-auto] {name}({model}) 失败[{fail}/{timeout}s] → {nxt}")
+    if verbose:
+        print(f"    [vision-auto] 全部失败: {'; '.join(trace)}")
+    return None, providers[-1].strip().lower()
+
+
 def self_correct_safe(rows_read, lottery, target_period, target_draw):
     """同 stage4_llm.self_correct，但去掉 anchor 特判：任何读数==target_draw 的行
     直接标目标期（不查是否底部行）会让"历史重复开出 target 同号"的行被误标本期，
