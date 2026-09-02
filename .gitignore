@@ -13,3 +13,7 @@ __pycache__/
 # 备份目录与难图归档（不入库）
 /docs_backup*/
 /hard_images_*/
+/check_*/
+
+# 编辑备份(不入库)
+*.bak*

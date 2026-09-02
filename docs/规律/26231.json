@@ -1,30 +1,89 @@
 {
  "period": "26231",
  "draw": "1 8 7 9 9",
- "total_records": 551,
- "hit_records": 96,
- "hit_rate": 0.1742,
+ "total_records": 405,
+ "hit_records": 30,
+ "hit_rate": 0.0741,
  "full_hits": 0,
- "rejected": [],
- "rules": [
+ "rejected": [
   {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
    "blogger": "家家旺ui",
-   "image": "s_2_a74f6ddf-4327-49a9-a2d6-1324a0247286_2.jpg",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    1,
-    2,
-    7,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
   },
+  {
+   "blogger": "流萤1923180",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  },
+  {
+   "blogger": "小目标ww",
+   "reason": "不定位（无位置）：胆码全盘/组合推荐，非定位画规"
+  },
+  {
+   "blogger": "贪财好色-傻仔-睡笑醒",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  },
+  {
+   "blogger": "袁爽:五花肉",
+   "reason": "不定位（无位置）：胆码全盘/组合推荐，非定位画规"
+  },
+  {
+   "blogger": "微时光",
+   "reason": "不定位（无位置）：胆码全盘/组合推荐，非定位画规"
+  },
+  {
+   "blogger": "阿笑1811878",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  },
+  {
+   "blogger": "彩～虹",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  },
+  {
+   "blogger": "佳湘",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  },
+  {
+   "blogger": "💘এ᭄王家刁蛮公主໑ຼ₀໑ຼ₄🥀࿐ᩚ",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  },
+  {
+   "blogger": "天霸动霸Tua",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  },
+  {
+   "blogger": "吴总2",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  },
+  {
+   "blogger": "484946079",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  },
+  {
+   "blogger": "用户_484732811",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  },
+  {
+   "blogger": "老三排列",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  },
+  {
+   "blogger": "赵公子👏",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  },
+  {
+   "blogger": "排骨小雨",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  },
+  {
+   "blogger": "_周小小",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  },
+  {
+   "blogger": "爱的回归线",
+   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+  }
+ ],
+ "rules": [
   {
    "period": "26231",
    "draw": "1 8 7 9 9",
@@ -148,46 +207,6 @@
   {
    "period": "26231",
    "draw": "1 8 7 9 9",
-   "blogger": "流萤1923180",
-   "image": "s_2_7c3d5121-9ebf-4ca0-b6e9-356ab8b85fe4_0.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    1,
-    2,
-    5,
-    6,
-    7,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "流萤1923180",
-   "image": "s_2_7c3d5121-9ebf-4ca0-b6e9-356ab8b85fe4_0.jpg",
-   "type": "尾",
-   "hit_position": "个",
-   "hit_numbers": [
-    0,
-    2,
-    3,
-    4,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
    "blogger": "发财，暴富",
    "image": "s_2_9adfd96a-b988-4a13-bb59-afe6276202f6_1.png",
    "type": "定位",
@@ -290,23 +309,6 @@
     9,
     2,
     5
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "小目标ww",
-   "image": "s_2_5ea710c2-d591-4cb4-9223-741a834bedee_1.jpg",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    1,
-    4,
-    7
    ],
    "multi": null,
    "predicted_positions": null,
@@ -425,195 +427,6 @@
   {
    "period": "26231",
    "draw": "1 8 7 9 9",
-   "blogger": "贪财好色-傻仔-睡笑醒",
-   "image": "s_2_e077a9d0-ef3a-4c49-8e28-e741ec3ac2b9_0.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    1,
-    6,
-    2,
-    7,
-    3,
-    8,
-    4,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "贪财好色-傻仔-睡笑醒",
-   "image": "s_2_e077a9d0-ef3a-4c49-8e28-e741ec3ac2b9_0.jpg",
-   "type": "尾",
-   "hit_position": "个",
-   "hit_numbers": [
-    0,
-    5,
-    1,
-    6,
-    2,
-    7,
-    4,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "贪财好色-傻仔-睡笑醒",
-   "image": "s_2_e077a9d0-ef3a-4c49-8e28-e741ec3ac2b9_0.jpg",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    2,
-    7,
-    0,
-    5,
-    3,
-    8,
-    1,
-    6
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "袁爽:五花肉",
-   "image": "s_2_2e7db153-ed5c-46d4-a47f-8f965766b80e_2.jpg",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    6,
-    9,
-    2,
-    5
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "微时光",
-   "image": "s_2_ece2f7dc-a96d-418d-a743-aa26949d4df9_2.jpg",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "阿笑1811878",
-   "image": "s_2_3034c81c-3cdf-48de-8e59-8638d357946a_2.jpg",
-   "type": "定位",
-   "hit_position": "千",
-   "hit_numbers": [
-    2,
-    9,
-    8,
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "阿笑1811878",
-   "image": "s_2_3034c81c-3cdf-48de-8e59-8638d357946a_2.jpg",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    6,
-    1,
-    7,
-    4
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "阿笑1811878",
-   "image": "s_2_3034c81c-3cdf-48de-8e59-8638d357946a_2.jpg",
-   "type": "定位",
-   "hit_position": "个",
-   "hit_numbers": [
-    2,
-    9,
-    0,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_c74b2fc0-cda4-47e4-8aed-96bdefae870c_8.jpg",
-   "type": "尾",
-   "hit_position": "个",
-   "hit_numbers": [
-    9,
-    0,
-    5
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_c74b2fc0-cda4-47e4-8aed-96bdefae870c_8.jpg",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    7,
-    2,
-    3,
-    0,
-    4
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
    "blogger": "中到你不中",
    "image": "s_2_fb54f0b2-cca2-4878-a312-14dde0a1f40b_1.jpeg",
    "type": "头",
@@ -621,171 +434,6 @@
    "hit_numbers": [
     1,
     6
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_0bf2a027-02ed-4b97-a4b0-ea522b4745d2_7.jpg",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    1,
-    2,
-    5
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_0bf2a027-02ed-4b97-a4b0-ea522b4745d2_7.jpg",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    5,
-    7,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_0bb95522-3454-4e7c-b8b3-5e2cf9ed88cd_1.jpg",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    3,
-    1
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_0bb95522-3454-4e7c-b8b3-5e2cf9ed88cd_1.jpg",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    3,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "佳湘",
-   "image": "s_2_dafca98e-7dbc-4be2-aa79-69118b0e10c9_0.jpg",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    1,
-    7,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "💘এ᭄王家刁蛮公主໑ຼ₀໑ຼ₄🥀࿐ᩚ",
-   "image": "s_2_3b479422-9a87-45ff-b8b2-6589de12642f_6.jpg",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    5,
-    2,
-    3,
-    1,
-    4
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "💘এ᭄王家刁蛮公主໑ຼ₀໑ຼ₄🥀࿐ᩚ",
-   "image": "s_2_3b479422-9a87-45ff-b8b2-6589de12642f_6.jpg",
-   "type": "定位",
-   "hit_position": "千",
-   "hit_numbers": [
-    1,
-    6,
-    4,
-    7,
-    3,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "💘এ᭄王家刁蛮公主໑ຼ₀໑ຼ₄🥀࿐ᩚ",
-   "image": "s_2_3b479422-9a87-45ff-b8b2-6589de12642f_6.jpg",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    7,
-    9,
-    1,
-    6,
-    0,
-    4
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_c74b2fc0-cda4-47e4-8aed-96bdefae870c_4.jpg",
-   "type": "尾",
-   "hit_position": "个",
-   "hit_numbers": [
-    7,
-    8,
-    9,
-    6,
-    4,
-    1
    ],
    "multi": null,
    "predicted_positions": null,
@@ -829,421 +477,6 @@
   {
    "period": "26231",
    "draw": "1 8 7 9 9",
-   "blogger": "天霸动霸Tua",
-   "image": "s_2_d2b795e6-53d4-4f80-97fc-c5470f550e69_0.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    1,
-    2,
-    3,
-    5,
-    6,
-    7
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "天霸动霸Tua",
-   "image": "s_2_d2b795e6-53d4-4f80-97fc-c5470f550e69_0.jpg",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    1,
-    2,
-    3,
-    4,
-    5,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "天霸动霸Tua",
-   "image": "s_2_d2b795e6-53d4-4f80-97fc-c5470f550e69_0.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    1,
-    2,
-    3,
-    5,
-    6,
-    7
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "天霸动霸Tua",
-   "image": "s_2_d2b795e6-53d4-4f80-97fc-c5470f550e69_0.jpg",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    1,
-    2,
-    3,
-    5,
-    7
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_1681a243-b548-4c2e-b751-89e01527e3ee_4.jpg",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    6,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_bd151fb7-44d5-4e54-a17d-22062d1c21ee_1.jpg",
-   "type": "尾",
-   "hit_position": "个",
-   "hit_numbers": [
-    0,
-    1,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_f0498c7f-df5f-4f1f-89c6-7de59bd2c4eb_0.jpg",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    5,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_f0498c7f-df5f-4f1f-89c6-7de59bd2c4eb_1.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    8,
-    1,
-    6,
-    4,
-    9,
-    2,
-    7
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_f0498c7f-df5f-4f1f-89c6-7de59bd2c4eb_1.jpg",
-   "type": "尾",
-   "hit_position": "个",
-   "hit_numbers": [
-    5,
-    1,
-    6,
-    3,
-    8,
-    4,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_56f8506e-50da-45c7-90d8-6e2cb1c9e9c2_4.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    2,
-    1,
-    6,
-    8,
-    7,
-    5
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_56f8506e-50da-45c7-90d8-6e2cb1c9e9c2_4.jpg",
-   "type": "尾",
-   "hit_position": "个",
-   "hit_numbers": [
-    3,
-    8,
-    0,
-    5,
-    6,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_56f8506e-50da-45c7-90d8-6e2cb1c9e9c2_4.jpg",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    6,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "彩～虹",
-   "image": "s_2_56f8506e-50da-45c7-90d8-6e2cb1c9e9c2_4.jpg",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    3,
-    7
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_74c62b3b-c7fe-446f-9d1e-df7f1c37a436_8.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_24958512-7307-4d5b-9b73-a90d167f1aa5_2.jpg",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    2,
-    3,
-    4,
-    5,
-    7,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_24958512-7307-4d5b-9b73-a90d167f1aa5_4.jpg",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    0,
-    1,
-    3,
-    5,
-    6,
-    7,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_24958512-7307-4d5b-9b73-a90d167f1aa5_4.jpg",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    0,
-    1,
-    5,
-    6,
-    7,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_24958512-7307-4d5b-9b73-a90d167f1aa5_5.jpg",
-   "type": "定位",
-   "hit_position": "个",
-   "hit_numbers": [
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_74c62b3b-c7fe-446f-9d1e-df7f1c37a436_0.jpg",
-   "type": "尾",
-   "hit_position": "个",
-   "hit_numbers": [
-    7,
-    9,
-    0,
-    4,
-    1,
-    6,
-    3,
-    5
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_24958512-7307-4d5b-9b73-a90d167f1aa5_0.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    1,
-    2,
-    3,
-    5,
-    6,
-    7,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "484946079",
-   "image": "s_2_4a3391f9-9609-4766-97d9-88ae36bcd9aa_0.jpg",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    0,
-    1,
-    4,
-    7
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
    "blogger": "用户_485392586",
    "image": "s_2_4fb625f3-396c-431b-ae51-2ac7f0b3015a_0.jpg",
    "type": "定位",
@@ -1263,63 +496,6 @@
   {
    "period": "26231",
    "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_64f3a72c-dbca-4b17-a64c-b10da20100cc_0.png",
-   "type": "定位",
-   "hit_position": "千",
-   "hit_numbers": [
-    0,
-    1,
-    2,
-    4,
-    5,
-    6,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "用户_484732811",
-   "image": "s_2_bef7714f-120b-4197-937c-94b56f24acf8_0.jpeg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    1,
-    2,
-    5,
-    4
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "用户_484732811",
-   "image": "s_2_bef7714f-120b-4197-937c-94b56f24acf8_0.jpeg",
-   "type": "尾",
-   "hit_position": "个",
-   "hit_numbers": [
-    3,
-    4,
-    5,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
    "blogger": "星辰888",
    "image": "s_2_256d6fa7-1853-4043-a927-0f1a399fc68d_0.jpeg",
    "type": "胆码",
@@ -1341,213 +517,6 @@
    "hit_position": "十",
    "hit_numbers": [
     1
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "老三排列",
-   "image": "s_2_f13de911-a661-46f4-b357-a6c30c20dc72_0.jpeg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    1,
-    2,
-    5,
-    6,
-    7,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "老三排列",
-   "image": "s_2_f13de911-a661-46f4-b357-a6c30c20dc72_0.jpeg",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    0,
-    1,
-    2,
-    5,
-    7,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "老三排列",
-   "image": "s_2_f13de911-a661-46f4-b357-a6c30c20dc72_0.jpeg",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    1,
-    4,
-    5,
-    6,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "老三排列",
-   "image": "s_2_f13de911-a661-46f4-b357-a6c30c20dc72_0.jpeg",
-   "type": "尾",
-   "hit_position": "个",
-   "hit_numbers": [
-    1,
-    2,
-    3,
-    4,
-    5,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "赵公子👏",
-   "image": "s_2_e6f42ae1-f96d-4be2-a966-38a4512e48c6_0.png",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    1,
-    2,
-    5,
-    6,
-    7,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "赵公子👏",
-   "image": "s_2_e6f42ae1-f96d-4be2-a966-38a4512e48c6_1.png",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    0,
-    1,
-    2,
-    3,
-    5,
-    7,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "排骨小雨",
-   "image": "s_2_555b651b-0f5b-411e-8df6-2d616af68bb4_0.png",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    0,
-    1,
-    2,
-    3,
-    6,
-    7,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "排骨小雨",
-   "image": "s_2_555b651b-0f5b-411e-8df6-2d616af68bb4_0.png",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    0,
-    1,
-    2,
-    3,
-    4,
-    7,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "排骨小雨",
-   "image": "s_2_555b651b-0f5b-411e-8df6-2d616af68bb4_0.png",
-   "type": "定位",
-   "hit_position": "个",
-   "hit_numbers": [
-    0,
-    2,
-    4,
-    5,
-    6,
-    7,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "排骨小雨",
-   "image": "s_2_555b651b-0f5b-411e-8df6-2d616af68bb4_0.png",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    3,
-    5,
-    8,
-    4
    ],
    "multi": null,
    "predicted_positions": null,
@@ -1562,41 +531,6 @@
    "type": "头",
    "hit_position": "万",
    "hit_numbers": [
-    1,
-    0
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "_周小小",
-   "image": "s_2_de87969e-4fbb-40ec-a578-ed02ead985c8_0.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    1,
-    3,
-    4
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "_周小小",
-   "image": "s_2_de87969e-4fbb-40ec-a578-ed02ead985c8_0.jpg",
-   "type": "胆码",
-   "hit_position": null,
-   "hit_numbers": [
-    4,
     1,
     0
    ],
@@ -1624,43 +558,6 @@
   {
    "period": "26231",
    "draw": "1 8 7 9 9",
-   "blogger": "_周小小",
-   "image": "s_2_de87969e-4fbb-40ec-a578-ed02ead985c8_1.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    1,
-    3,
-    4,
-    6
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "爱的回归线",
-   "image": "s_2_02bdc30d-16f5-43ad-9520-1f198c343193_0.jpg",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    1,
-    2,
-    7,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
    "blogger": "勇往拾钱💰",
    "image": "s_2_05db8f40-40c4-41c2-bf21-5a834c140a13_0.png",
    "type": "定位",
@@ -1675,114 +572,7 @@
    "predicted_positions": null,
    "pos_check": null,
    "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_020ee74f-0ef9-4090-8808-f58a2e623b4a_2.jpg",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    0,
-    1,
-    2,
-    3,
-    5,
-    7,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_020ee74f-0ef9-4090-8808-f58a2e623b4a_3.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    2,
-    4,
-    6,
-    8,
-    1,
-    5
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_020ee74f-0ef9-4090-8808-f58a2e623b4a_3.jpg",
-   "type": "尾",
-   "hit_position": "个",
-   "hit_numbers": [
-    1,
-    3,
-    5,
-    7,
-    9,
-    2,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_020ee74f-0ef9-4090-8808-f58a2e623b4a_5.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    1,
-    2,
-    5,
-    6,
-    7,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26231",
-   "draw": "1 8 7 9 9",
-   "blogger": "吴总2",
-   "image": "s_2_020ee74f-0ef9-4090-8808-f58a2e623b4a_8.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
   }
  ],
- "rule_count": 96
+ "rule_count": 30
 }

@@ -25,8 +25,30 @@ def norm_pos(s):
 
 
 def real_hit(r):
-    # 杀号（杀掉不开出的号码）不体现画规规律，一律不算命中。
-    return r.get("hit") and r.get("type") != "杀号"
+    """严格命中口径：只有博主在走势图上画出的、有明确位置的预测才算命中。
+
+    杀号（杀掉不开出的号码）、报号/铁率（文字预测截图/杀号表等，博主直接打字报数、
+    无画规）、不定位组合（无位置）都不体现画规规律，一律不算命中。"""
+    if not r.get("hit"):
+        return False
+    if r.get("type") == "杀号":
+        return False
+    if r.get("img_type") != "走势图圈选":
+        return False
+    if not r.get("position"):
+        return False
+    return True
+
+
+def reject_reason(r):
+    """被剔除的命中候选的剔除原因（优先用已记录的原因，否则按口径推导）。"""
+    if r.get("reject_reason"):
+        return r.get("reject_reason")
+    if r.get("img_type") != "走势图圈选":
+        return f"报号/铁率（{r.get('img_type')}）：博主文字报数/缩水推荐，不体现画规"
+    if not r.get("position"):
+        return "不定位（无位置）：胆码全盘/组合推荐，非定位画规"
+    return None
 
 
 def main():
@@ -48,10 +70,11 @@ def main():
     ACTUAL = dict(zip(["万", "千", "百", "十", "个"], [int(x) for x in DRAW.split()]))
     CALIB = f"{args.calib} = {args.calib_draw}" if args.calib_draw else ""
     data = json.load(open(PATH, encoding="utf-8"))
-    # 杀号（杀掉不开出的号码）不体现画规规律，从采集与命中口径整体剔除
-    data = [r for r in data if r.get("type") != "杀号"]
-    hits = [r for r in data if real_hit(r)]
-    rejected = [r for r in data if r.get("reject_reason")]
+    # 采集口径：仅博主画规（走势图圈选、非杀号）；杀号与报号/铁率不体现画规，整体剔除
+    kept = [r for r in data if r.get("type") != "杀号" and r.get("img_type") == "走势图圈选"]
+    hits = [r for r in kept if real_hit(r)]
+    # 被剔除的命中候选：识别为命中但不符严格口径（报号/铁率、无位置）→ 展示在"被剔除"节
+    rejected = [r for r in data if r.get("hit") and not real_hit(r) and r.get("type") != "杀号"]
     # 同博主多条 reject 记录去重（保留一条）
     seen_rej = set()
     rejected_dedup = []
@@ -62,7 +85,7 @@ def main():
             rejected_dedup.append(r)
     rejected = rejected_dedup
 
-    n_total = len(data)
+    n_total = len(kept)
     n_hit = len(hits)
     hit_rate = n_hit / n_total if n_total else 0
     full = [r for r in hits if r.get("multi") == "1位置1中"]
@@ -91,7 +114,7 @@ def main():
         "hit_records": n_hit,
         "hit_rate": round(hit_rate, 4),
         "full_hits": n_full,
-        "rejected": [{"blogger": r.get("blogger"), "reason": r.get("reject_reason")} for r in rejected],
+        "rejected": [{"blogger": r.get("blogger"), "reason": reject_reason(r)} for r in rejected],
         "rules": rules,
         "rule_count": len(rules),
     }
@@ -130,7 +153,7 @@ def main():
     L.append("## 被剔除的命中（本期修正）")
     L.append("")
     for r in rejected:
-        L.append(f"- **{r.get('blogger')}**：{r.get('reject_reason')}")
+        L.append(f"- **{r.get('blogger')}**：{reject_reason(r)}")
     L.append("")
     L.append("> 规律为博主手绘画规的历史总结，彩票开奖属独立随机事件，不具备预测效力。")
     with open(os.path.join(OUT_DIR, f"{PERIOD}.md"), "w", encoding="utf-8") as f:

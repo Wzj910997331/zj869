@@ -3,33 +3,139 @@
 > 从 gouli99 论坛抓取博主手画的"排列五走势图"，用**视觉模型**识别画规（圈选/连线/框选/杀号），
 > 通过**真实开奖校准**核验命中，沉淀为**画规方法库**（目标 1000 条），为后续每期预测/回测提供方法依据。
 >
-> 现状一句话：**26231/26232 两期已全流程分析：采集 551+699=1250 条记录 → 命中 96+129=225 条（17.42%/18.45%），
-> 已沉淀命中规律 225 条（`docs/规律/26231.md`、`26232.md`）。26230 期命中复核定稿：采集 694 条 → 命中 18 条（2.59%），
-> 其中完全命中（1位置1中）3 条，已用 `tools/verify_rules.py` 做无未来函数窗口内验证；画规方法库 48 条已生成；视觉模型已切换到可用的 glm-5.3-flash。**
+> 现状一句话：**流程已改造为四步管线「爬取 → 确定性过滤 → 裁剪 → resize → 视觉判定」，20260831 期（26233）583 张图跑通：过滤 keep 134 / uncertain 285 / exclude 164，冒烟 2 张全部 ds-ok（A–G 对齐门全过、匹配 6/11 期、命中与规律已输出）。旧五阶段管线（26230–26232）成果保留：26231/26232 采集 957 条 → 命中 100 条（7.41%/12.68%），26230 命中 18 条（2.59%），画规方法库 48 条已生成。**
 
 ---
 
-## 0. 每期准确率与采集量（规律库入口）
+## 0a. 历史成果：每期准确率与采集量（规律库入口）
 
 | 期号 | 开奖 | 采集记录 | 命中 | 命中率 | 完全命中 | 累计规律 |
 |---|---|---|---|---|---|---|
 | 26230 | 9 4 6 8 3 | 694 条 | 18 条 | 2.59% | 3 条 | **18 条**（docs/规律/26230.md） |
-| 26231 | 1 8 7 9 9 | 551 条 | 96 条 | 17.42% | —（未跑多位置重读） | **96 条**（docs/规律/26231.md） |
-| 26232 | 8 0 2 3 3 | 699 条 | 129 条 | 18.45% | —（未跑多位置重读） | **129 条**（docs/规律/26232.md） |
+| 26231 | 1 8 7 9 9 | 405 条 | 30 条 | 7.41% | —（未跑多位置重读） | **30 条**（docs/规律/26231.md） |
+| 26232 | 8 0 2 3 3 | 552 条 | 70 条 | 12.68% | —（未跑多位置重读） | **70 条**（docs/规律/26232.md） |
 
 > 口径说明：
-> - **采集记录**：该期抓到的博主画规记录数（视觉识别全部画法标注，含未命中）。
-> - **命中**：博主预测位置含实际开出数字（空号杀号、未画规律、不定位铁码等假命中已剔除）。
+> - **采集记录**：该期博主的画规记录数（仅"走势图圈选"；杀号、报号/铁率文字截图不体现画规，从采集口径整体剔除）。
+> - **命中**：博主在走势图上画出、且预测位置含实际开出数字（空号杀号、未画规律、不定位铁码、报号/铁率等假命中已剔除）。
 > - **完全命中**：博主只预测 1 个位置且命中（1位置1中）。
 > - **命中率 = 命中 / 采集**；每期新增规律累计写入 `docs/规律/<期号>.md`。
-> - **杀号不计入**：博主"杀掉"的号码不体现画规预测，从采集与命中口径整体剔除（26231 剔 33 / 26232 剔 42 / 26230 剔 4）。
-> - 26231/26232 未跑 GLM 多位置重读（网关识图慢、用户决定跳过），命中口径为单条识别命中；
->   26230 跑过重读并剔除 2 条假命中，故命中率口径略严、数值更低（2.59%）。
+> - **杀号不计入**：博主"杀掉"的号码不体现画规预测（26231 剔 33 / 26232 剔 42 / 26230 剔 4）。
+> - **报号/铁率不计入**：文字预测截图类（博主直接打字报数/缩水推荐，无画规）从采集与命中整体剔除（26231 剔 62 / 26232 剔 59）。
+> - **不定位不计入**：无位置的胆码全盘/组合推荐，非定位画规，不算命中。
+> - 26231/26232 未跑 GLM 多位置重读（网关识图慢），命中口径为单条识别命中 + `tools/recheck_compute.py` 纯计算复测（无视觉模型）从严过滤；26230 跑过重读并剔除 2 条假命中，故命中率口径略严、数值更低（2.59%）。
 > - ⚠️ 彩票开奖属独立随机事件，历史规律不具备预测效力。
 
 ---
 
-## 1. 整体设计（五阶段管线）
+## 0. 现行全流程（四步管线，2026-08-31 起，从爬取到输出规律）
+
+改造目标：爬完一期数据后不再把每张原图都喂慢速视觉模型，先用**确定性 OpenCV+OCR** 过滤掉
+"没在近期待开奖历史上画规律"的图，再把真正画了规的图交给视觉模型做**对已开奖回溯判定**。
+
+```
+① 爬取博主图 + 开奖历史
+   tools/crawl_gouli.py 2026-08-31            gouli99 论坛 API（lottery=2 排列五）
+   tools/fetch_lottery.py --limit 60          500彩票网 plw 接口（gb2312）
+        │   → data/crawl/20260831/posts.json + images/（583 张 s_2_<uuid>_<n>.jpg）
+        │     + lottery_recent.json（60 期，26233 最新在首条）
+        ▼
+② 确定性过滤（新，无 LLM）
+   modules/image_recognize/filter_trend.py v3
+        │   多信号置信分级：S1 期号多期连续性 / S2 标注存在性 / S3 标注形态分级 / S4 列覆盖
+        │   → data/crawl/20260831/filter_report.json   keep 134 / uncertain 285 / exclude 164
+        ▼
+③ 裁剪（复用 crop_all）
+   modules/image_recognize/crop_all.py --date 20260831
+        │   → data/recognize/20260831_all/crops_all_manifest.json
+        │     + {crop_dir}/02_annotated.png（标注行栈图，640 宽）
+        ▼
+④ 显式 resize（新）
+   modules/image_recognize/resize_crops.py
+        │   640 宽浅色数字视觉模型读不清 → INTER_CUBIC 放大到 ≥1024 宽（JPEG q90）
+        │   → data/recognize/20260831_all/vision/{stem}.jpg + vision_manifest.json
+        ▼
+⑤ 视觉判定 + 规律（新）
+   modules/image_recognize/judge_accuracy.py
+        │   ds 读数字/标注 → A–G 确定性对齐门 → 确定性交叉命中校验 → 抽规律
+        │   → data/recognize/20260831_all/analysis/judge_20260831.json
+        │     + data/crawl/20260831/predictions_with_blogger.json（规律输出，博主归属 join posts.json）
+```
+
+### 命令链（20260831 实测）
+
+```bash
+# ① 爬取（服务器容器内）＋ 开奖历史
+docker exec zhenjie sh -c 'cd /data/zhenjie/zj869 && .venv/bin/python tools/crawl_gouli.py 2026-08-31'
+/usr/bin/python3 tools/fetch_lottery.py --out data/crawl/20260831/lottery_recent.json --limit 60
+
+# ② 确定性过滤（583 张，OpenCV+tesseract 秒级，无 LLM）
+/usr/bin/python3 modules/image_recognize/filter_trend.py \
+    --date 20260831 --target-period 26233 \
+    --lottery data/crawl/20260831/lottery_recent.json
+
+# ③ 裁剪（复用，全量跑一次即可）
+/usr/bin/python3 modules/image_recognize/crop_all.py --date 20260831
+
+# ④ resize keep/uncertain 图（从 filter_report 取，不覆盖任何旧产物）
+/usr/bin/python3 modules/image_recognize/resize_crops.py \
+    --date 20260831 \
+    --filter data/crawl/20260831/filter_report.json \
+    --manifest data/recognize/20260831_all/crops_all_manifest.json \
+    --out-dir data/recognize/20260831_all/vision
+
+# ⑤ 视觉判定 + 规律（--files f1,f2 指定冒烟图；默认对全部 vision 图）
+/usr/bin/python3 modules/image_recognize/judge_accuracy.py \
+    --date 20260831 --target-period 26233 --draw "1 6 3 4 0" \
+    --manifest data/recognize/20260831_all/crops_all_manifest.json \
+    --filter data/crawl/20260831/filter_report.json \
+    --vision data/recognize/20260831_all/vision_manifest.json \
+    --lottery data/crawl/20260831/lottery_recent.json \
+    --posts data/crawl/20260831/posts.json \
+    --src-dir data/crawl/20260831/images
+```
+
+### 过滤决策矩阵（filter_trend.py v3，全部确定性）
+
+| 条件 | 决策 | 20260831 计数 |
+|---|---|---|
+| 非走势图版式（行带/列结构不匹配） | `exclude/no-chart` | 80 |
+| 走势图但无任何标注 | `exclude/no-anno` | 17 |
+| 期号命中但距目标 > window（旧期画） | `exclude/stale-period` | 12 |
+| 有标注但全是孤立 dot / 列定位失败且无有效画规 | `exclude/anno-trivial` | 55 |
+| 期号高置信 + gap∈window + 标注覆盖数字列 | `keep-high` | 28 |
+| 期号在窗口内 + 标注存在（质量中等） | `keep-med` | 106 |
+| 期号弱（读不出/不连续）但结构+标注像走势图 | `uncertain`（送视觉） | 285 |
+
+v3 修复的两处误杀根因：① **ring（圈选）计入有效标注**（原版只认 band/box，把真实画规图一刀切）；
+② **列定位换灰度投影**（`detect_columns`：gray<205 全域投影→宽峰→5 列等距选择，深色图也能用；
+原 `find_cols_in_band` 阈值 140 把深色背景当前景 → 列全空 → 误判 trivial）。结果 anno-trivial 236→55。
+
+### 冒烟结果（20260831 / 26233 / draw=1 6 3 4 0）
+
+| 图 | 过滤决策 | 判定 | 对齐（A–G 门） | 匹配期 | 命中 |
+|---|---|---|---|---|---|
+| `s_2_0ee3536d…_2.jpg` | keep-med | ds-ok | 全过（虚构0/漏0、读数 7/9 行） | 26221→26232（6 期） | row0 千位=6（26221）、row3 十位=4（26224）、row5 万位=1（26225） |
+| `s_2_33b7cc04…_2.jpg` | keep-high | ds-ok | 全过（读数 11/16 行） | 26222→26232（11 期） | row6 千位=6（26228），与 glm 核验命中一致 |
+
+规律输出：`predictions_with_blogger.json` = 24 条 patterns + 14 条标注命中判定（含博主归属）。
+判定口径 = **对已开奖回溯判定**：模型读博主标注位置+数字，A–G 门保证行→期映射可靠后，
+确定性逐位算 hit，与模型 verdict 交叉核对（不一致则 glm 兜底）。**杀号/报号/铁率/不定位不计入命中。**
+
+### 关键设计（踩坑沉淀）
+
+- **anti-loop 提示词**：网关"始终思考"型模型对开放式规律分析死循环；判定 prompt 一律"只读数字、
+  忽略彩色标记、单紧 JSON、不要思考不要解释"。
+- **A–G 对齐门**（`analyze_crops_ds.py` 只 import 不修改）：A 无虚构行 / B 匹配率≥0.6 / C 无重复期 /
+  D 期序单调 / E 时效≤5 / F 标注覆盖 / G 底部锚定。ds 读数不稳（同图多次调用读行数不同）→
+  G 门软化（底部行没读出不算失败）+ B 门失败自动重试（最多 3 次）。
+- **resize 夹逼**：过大下采样到 ≤1024×2200，过小（640 栈图）上采样到 ≥1024 宽，统一 JPEG q90。
+- **零污染约束**：filter/resize/judge 只写新文件；`image_patterns_with_blogger.json`（2145 条旧流程产物）、
+  `crops_all_manifest.json`、`exclude_list.json` 哈希校验不变；20260829/30 目录不动。
+
+---
+
+## 1. 历史管线（五阶段，26230–26232 期使用，已被四步管线取代）
 
 ```
 ① 历史开奖采集          500彩票网 plw 接口（gb2312，UA+Referer）
@@ -89,6 +195,12 @@
 
 ## 4. 目录结构```
 zj869/
+├── modules/image_recognize/     # 四步管线（现行，2026-08-31 起）
+│   ├── filter_trend.py          # ② 确定性过滤（OpenCV+OCR，无 LLM）→ filter_report.json
+│   ├── crop_all.py              # ③ 裁剪（复用；仅 status==cropped 进识别）
+│   ├── resize_crops.py          # ④ 显式 resize（640→≥1024 宽）→ vision/*.jpg
+│   ├── judge_accuracy.py        # ⑤ 视觉判定+规律 → judge_<date>.json + predictions_with_blogger.json
+│   └── cv_trend_reader/         # 底层原语（行带/列定位/标注形态/期号OCR/开奖匹配）
 ├── agents/                    # 原始多Agent框架（collector 已接真实数据）
 ├── tools/                     # 数据/验证/方法库工具（主战场）
 │   ├── crawl_gouli.py         # ② gouli99 论坛图爬虫
@@ -192,6 +304,11 @@ python tools/verify_rules.py \
     --draws data/crawl/20260828/lottery_recent.json \
     --out data/crawl/20260828/rule_verify_26230.json \
     --inplace --md docs/规律/26230_验证.md
+
+# 复测（纯计算，无视觉模型）：从识别结果 type/position/numbers 推出每条预测逐位置对位，
+# 输出与 glm_multipos_recheck.json 兼容；--base 传纯日期
+python tools/recheck_compute.py --base 20260829 --period 26231 --draw "1 8 7 9 9" \
+    --calib 26230 --calib-draw "9 4 6 8 3"
 
 # ② gouli99 采集（服务器容器内跑）
 # docker exec zhenjie sh -c 'cd /data/zhenjie/zj869 && .venv/bin/python tools/crawl_gouli.py 2026-08-28'
