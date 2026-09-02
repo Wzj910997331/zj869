@@ -18,6 +18,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import threading
 
 import cv2
 import numpy as np
@@ -190,12 +191,212 @@ def detect_annotations(img, min_area=400, colors=None):
 
 # ---------------------------------------------------------------- OCR
 
+_CNN = None  # 懒加载缓存: (model, predict) 或 False(加载失败)
+_CNN_LOCK = threading.Lock()
+
+
+def _cnn_backend():
+    """懒加载 digit_cnn 模型。返回 (model, predict) 或 None。
+
+    小模型多线程池开销远大于计算(64 线程池每前向 ~360ms), 固定 1 线程。
+    16 worker 线程池并发首调时需加锁避免重复 import torch。
+    """
+    global _CNN
+    if _CNN is None:
+        with _CNN_LOCK:
+            if _CNN is None:
+                try:
+                    import torch
+                    torch.set_num_threads(1)
+                    model_dir = os.path.join(
+                        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "model")
+                    if model_dir not in sys.path:
+                        sys.path.insert(0, model_dir)
+                    from digit_cnn import load_model, predict
+                    m = load_model(device="cpu")
+                    _CNN = (m, predict) if m is not None else False
+                except Exception:
+                    _CNN = False
+    return _CNN or None
+
+
+def segment_digits_cc(bw, roi_h):
+    """连通域切分数字。过滤小噪点 + 触顶/触底竖线(边框/网格线) + 粘连宽组件投影谷切开。
+
+    返回 [(x,y,w,h), ...] 按 x 升序。数字在行带中居中悬浮, 竖线贯穿全高 → 排除。
+    """
+    n, _, stats, _ = cv2.connectedComponentsWithStats(bw, 8)
+    comps = []
+    for i in range(1, n):
+        x, y, w, h, area = stats[i]
+        if area < 40 or w < 4:
+            continue
+        if h < max(10, int(roi_h * 0.30)) or h > int(roi_h * 0.85):
+            continue
+        if y <= 1 or y + h >= roi_h - 1:  # 触顶/触底=竖线/边框, 非数字
+            continue
+        comps.append((x, y, w, h))
+    comps.sort(key=lambda c: c[0])
+    boxes = []
+    for x, y, w, h in comps:
+        if w <= 1.5 * h:
+            boxes.append((x, y, w, h))
+            continue
+        # 粘连多字: 在投影谷处二分(暗像素尽量均衡分到两半)
+        sub = bw[y:y + h, x:x + w]
+        vp = sub.sum(axis=0)
+        stack = [(0, w)]
+        while stack:
+            a, b = stack.pop()
+            if b - a <= 2 or (b - a) <= 1.5 * h:
+                boxes.append((x + a, y, b - a, h))
+                continue
+            best_i, best_ratio = -1, 1e9
+            for i in range(a + 1, b - 1):
+                left, right = vp[a:i].sum(), vp[i:b].sum()
+                if left == 0 or right == 0:
+                    continue
+                ratio = max(left, right) / min(left, right)
+                if ratio < best_ratio:
+                    best_ratio, best_i = ratio, i
+            if best_i < 0:
+                boxes.append((x + a, y, b - a, h))
+            else:
+                stack.append((a, best_i))
+                stack.append((best_i, b))
+    boxes.sort(key=lambda b: b[0])
+    return boxes
+
+
+def _digit_band(bw, y_pad=6, min_h=8, frac_lo=0.02, frac_hi=0.85):
+    """二值图 → 数字行带 (y0, y1)。行投影找"适量暗像素"行(2%-85%)的最长连续段。
+
+    背景行两种极端都被排除: 白底 → frac≈0; 深底(整条被阈值吞成前景) → frac≈1。
+    数字行暗密度落在中间 → 被选中, 从而把条带裁剪到数字真正所在的行带,
+    让 segment_digits_cc 的高度比例过滤(0.30-0.85)对瘦小的期号数字有意义。
+    """
+    h, w = bw.shape
+    if h < 8 or w < 4:
+        return None
+    frac = bw.sum(axis=1) / 255.0 / w
+    digit_rows = (frac >= frac_lo) & (frac <= frac_hi)
+    best_s, best_l, cs, cl = -1, 0, -1, 0
+    for i, dr in enumerate(digit_rows):
+        if dr:
+            if cs < 0:
+                cs = i
+            cl += 1
+        else:
+            if cl > best_l:
+                best_s, best_l = cs, cl
+            cs, cl = -1, 0
+    if cl > best_l:
+        best_s, best_l = cs, cl
+    if best_s < 0 or best_l < min_h:
+        return None
+    return max(0, best_s - y_pad), min(h, best_s + best_l + y_pad)
+
+
+def _gap_split_period(boxes, max_ratio=2.5, min_gap=30):
+    """按相邻 box 大间隙把"期号 5 位 + 结果列首位"分开, 取左侧期号组。
+
+    期号 5 位间距小(~15-25px), 期号与右侧结果列之间隔一大段空白(~100px+);
+    最大间隙 > max_ratio × 中位间隙 即在此切开, 取左组。切不出就原样返回。
+    """
+    if len(boxes) < 2:
+        return boxes
+    gaps = [boxes[i + 1][0] - (boxes[i][0] + boxes[i][2]) for i in range(len(boxes) - 1)]
+    med = np.median(gaps)
+    if med <= 0:
+        return boxes
+    i = int(np.argmax(gaps))
+    if gaps[i] > max_ratio * med and gaps[i] > min_gap:
+        return boxes[:i + 1]
+    return boxes
+
+
+def ocr_digits_cnn(img_roi, thresholds=(235, 210, 220, 180, 150, 120, 90, 60),
+                   bright_thresholds=(150, 190, 220)):
+    """CNN 读 ROI 中的数字串: 多档阈值连通域切分 → digit_cnn 逐字。
+
+    返回 [(digit, conf), ...] conf=0~1; 无模型/无切分 → []。
+
+    鲁棒性(v2, 2026-09-02 期号条带实测):
+      ① 数字行带裁剪: 投影找数字所在行带, 解决"条带很高、数字只占 1/4"导致
+         高度过滤(0.30-0.85×roi_h)把瘦小时期数字全过滤掉的失败。
+      ② 低阈值扩展(90/60): 深底图(BGR 均值 89 这类)浅色阈值把整个背景吞成
+         前景单 blob → 切分失败; 低阈值只抓最黑的前景数字。
+      ③ 亮字方向: 白字/浅字在深底(前景=亮像素)时 BINARY_INV 全失败, 补正向
+         THRESH_BINARY 档。
+      ④ 期号列间隙切分: 条带常带上结果列首位, 按大间隙把期号 5 位切出来,
+         避免返回 "26233X" 这种 6 位串导致期号不匹配。
+    """
+    back = _cnn_backend()
+    if back is None:
+        return []
+    model, predict = back
+    gray = cv2.cvtColor(img_roi, cv2.COLOR_BGR2GRAY)
+    if gray.size == 0:
+        return []
+    candidates = []
+
+    def _run(bw):
+        band = _digit_band(bw)
+        if band is None:
+            return
+        y0, y1 = band
+        band_bw = bw[y0:y1]
+        if band_bw.size == 0 or y1 - y0 < 8:
+            return
+        boxes = segment_digits_cc(band_bw, y1 - y0)
+        boxes = _gap_split_period(boxes)
+        if len(boxes) < 3:
+            return
+        out = []
+        for x, y, w, h in boxes:
+            pad = max(2, int(0.12 * h))
+            cell = img_roi[y0 + max(0, y - pad):y0 + y + h + pad,
+                           max(0, x - pad):x + w + pad]
+            if cell.size == 0:
+                continue
+            r = predict(cell, model=model)
+            if r:
+                out.append((int(r[0]), float(r[1])))
+        if out:
+            candidates.append(out)
+
+    for thr in thresholds:
+        _, bw = cv2.threshold(gray, thr, 255, cv2.THRESH_BINARY_INV)
+        bw = cv2.morphologyEx(bw, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
+        _run(bw)
+    for thr in bright_thresholds:
+        _, bw = cv2.threshold(gray, thr, 255, cv2.THRESH_BINARY)
+        bw = cv2.morphologyEx(bw, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
+        _run(bw)
+
+    if not candidates:
+        return []
+    c46 = [o for o in candidates if 4 <= len(o) <= 6]
+    pool = c46 or candidates
+    return max(pool, key=lambda o: (len(o), sum(c for _, c in o)))
+
+
 def ocr_digits(img_roi, psm=7, whitelist="0123456789", upscale=4,
                threshold=120):
-    """tesseract 读 ROI 中的数字。upscale 放大倍数提升识别率。
+    """读 ROI 中的数字。OCR 引擎由环境变量 OCR_ENGINE 控制:
+      auto(默认) = CNN 可用则 CNN, 否则 tesseract; cnn / tesseract 强制指定。
 
-    返回 [(digit, conf), ...] conf=0~100, 空格/噪声过滤。
+    CNN 返回 [(digit, conf)], conf=0~1; tesseract 返回 conf=100。
+    调用方(期号校验/配对)只取数字串, 两种引擎输出格式一致。
     """
+    engine = os.environ.get("OCR_ENGINE", "auto")
+    if engine in ("cnn", "auto"):
+        res = ocr_digits_cnn(img_roi)
+        if res:
+            return res
+        if engine == "cnn":
+            return []
+    # tesseract 路径(原实现): 每 ROI 一次子进程
     gray = cv2.cvtColor(img_roi, cv2.COLOR_BGR2GRAY)
     if gray.size == 0:
         return []

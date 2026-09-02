@@ -33,9 +33,9 @@ FONT_FILES = [
     "LiberationSans-Regular.ttf", "LiberationSans-Bold.ttf",
     "LiberationMono-Regular.ttf", "LiberationSansNarrow-Regular.ttf",
 ]
-PER_DIGIT = 2500
+PER_DIGIT = 1200
 BATCH = 128
-EPOCHS = 12
+EPOCHS = 10
 
 
 def load_fonts():
@@ -130,11 +130,13 @@ class DigitSet(Dataset):
 
 def main():
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    import torch as _torch
+    _torch.set_num_threads(4)  # 机器 load 高: 默认 64 线程池抢核, 小模型反而更慢
     fonts = load_fonts()
     if not fonts:
-        print("[train] ERROR: 无可用字体")
+        print("[train] ERROR: 无可用字体", flush=True)
         sys.exit(2)
-    print(f"[train] 字体 {len(fonts)} 个，开始生成 {PER_DIGIT*10} 样本...")
+    print(f"[train] 字体 {len(fonts)} 个，开始生成 {PER_DIGIT*10} 样本...", flush=True)
     data, labels = [], []
     for digit in range(10):
         base = [render_digit(digit, f) for f in fonts]
@@ -178,10 +180,10 @@ def main():
                 vo += (out.argmax(1) == y).sum().item()
                 vt += len(y)
         vacc = vo / vt
-        print(f"[train] ep{ep+1}: train_acc={ok/tot:.4f} val_acc={vacc:.4f}")
+        print(f"[train] ep{ep+1}: train_acc={ok/tot:.4f} val_acc={vacc:.4f}", flush=True)
         if best is None or vacc > best[0]:
             best = (vacc, ep, save_model(model))
-    print(f"[train] best val_acc={best[0]:.4f} @ep{best[1]} -> {best[2]}")
+    print(f"[train] best val_acc={best[0]:.4f} @ep{best[1]} -> {best[2]}", flush=True)
 
 
 if __name__ == "__main__":

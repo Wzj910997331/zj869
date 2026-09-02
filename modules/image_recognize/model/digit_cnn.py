@@ -57,7 +57,12 @@ def save_model(model):
 
 
 def _to_tensor(gray, device="cpu"):
-    """灰度图（uint8 0-255 或 float 0-1）→ (1,1,32,48) tensor。"""
+    """灰度图（uint8 0-255 或 float 0-1）→ (1,1,32,48) tensor。
+
+    背景用白色(1.0)填充: 走势图单元格是浅色底+深色数字, 白填充延续图表背景,
+    与真实训练分布(render 白底/真实 cell 白底)一致。黑填充=给输入套黑框,
+    训练分布从未见过, 会让小 CNN 误判(曾实测干净数字全判 0)。
+    """
     if isinstance(gray, np.ndarray):
         if gray.dtype == np.uint8:
             arr = gray.astype(np.float32) / 255.0
@@ -68,10 +73,10 @@ def _to_tensor(gray, device="cpu"):
     if arr.ndim == 3:
         arr = arr[:, :, 0]
     h, w = arr.shape
-    # 等比缩放填到 32×48 画布（保持长宽比，居中）
+    # 等比缩放填到 32×48 画布（保持长宽比，居中，白底）
     scale = min(INPUT_H / h, INPUT_W / w)
     nh, nw = max(1, int(round(h * scale))), max(1, int(round(w * scale)))
-    canvas = np.zeros((INPUT_H, INPUT_W), dtype=np.float32)
+    canvas = np.full((INPUT_H, INPUT_W), 1.0, dtype=np.float32)
     import cv2
     r = cv2.resize(arr, (nw, nh), interpolation=cv2.INTER_AREA)
     y0 = (INPUT_H - nh) // 2
