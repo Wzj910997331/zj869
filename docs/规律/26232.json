@@ -1,9 +1,9 @@
 {
  "period": "26232",
  "draw": "8 0 2 3 3",
- "total_records": 552,
- "hit_records": 70,
- "hit_rate": 0.1268,
+ "total_records": 471,
+ "hit_records": 0,
+ "hit_rate": 0.0,
  "full_hits": 0,
  "rejected": [
   {
@@ -20,7 +20,7 @@
   },
   {
    "blogger": "小龙女抓🐴",
-   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+   "reason": "开奖后发帖（复盘/下期预测，发帖 23:24）：晚于本期开奖，图含本期开奖结果，博主圈的是已知号码"
   },
   {
    "blogger": "林2962435",
@@ -35,6 +35,10 @@
    "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
   },
   {
+   "blogger": "富老师",
+   "reason": "多码宽网（5 码候选）：候选池式，推不出本期唯一结果"
+  },
+  {
    "blogger": "叫我夏天",
    "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
   },
@@ -44,7 +48,7 @@
   },
   {
    "blogger": "家家旺ui",
-   "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
+   "reason": "开奖后发帖（复盘/下期预测，发帖 21:43）：晚于本期开奖，图含本期开奖结果，博主圈的是已知号码"
   },
   {
    "blogger": "用户_484732811",
@@ -59,1151 +63,158 @@
    "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
   },
   {
+   "blogger": "岿林深山",
+   "reason": "多码宽网（5 码候选）：候选池式，推不出本期唯一结果"
+  },
+  {
+   "blogger": "长龙哥",
+   "reason": "多码宽网（3 码候选）：候选池式，推不出本期唯一结果"
+  },
+  {
+   "blogger": "闲人_石头_3360052",
+   "reason": "未独立二次识读（仅单源视觉识别读数）：图上标记未经第二来源确认，同图可解释为任意数字，按口径不计命中"
+  },
+  {
+   "blogger": "用户_485110591",
+   "reason": "多码宽网（8 码候选）：候选池式，推不出本期唯一结果"
+  },
+  {
+   "blogger": "小泉精码",
+   "reason": "开奖后发帖（复盘/下期预测，发帖 21:35）：晚于本期开奖，图含本期开奖结果，博主圈的是已知号码"
+  },
+  {
    "blogger": "_政_0",
    "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
   },
   {
+   "blogger": "486517481",
+   "reason": "多码宽网（2 码候选）：候选池式，推不出本期唯一结果"
+  },
+  {
+   "blogger": "长沙韩国艺匠婚纱摄影",
+   "reason": "未独立二次识读（仅单源视觉识别读数）：图上标记未经第二来源确认，同图可解释为任意数字，按口径不计命中"
+  },
+  {
+   "blogger": "顺风顺水顺财神天天中",
+   "reason": "多码宽网（2 码候选）：候选池式，推不出本期唯一结果"
+  },
+  {
+   "blogger": "486855127",
+   "reason": "多码宽网（6 码候选）：候选池式，推不出本期唯一结果"
+  },
+  {
+   "blogger": "486628109",
+   "reason": "单码但位置未对上：数字开在别位，仅全盘碰巧命中"
+  },
+  {
+   "blogger": "第6个秋季",
+   "reason": "多码宽网（3 码候选）：候选池式，推不出本期唯一结果"
+  },
+  {
    "blogger": "呵呵好嘛",
    "reason": "报号/铁率（文字预测截图）：博主文字报数/缩水推荐，不体现画规"
-  }
- ],
- "rules": [
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "富老师",
-   "image": "s_2_04af4c0f-4a8d-443a-8609-f5a3c5fd57a8_1.jpg",
-   "type": "定位",
-   "hit_position": "千",
-   "hit_numbers": [
-    0,
-    3,
-    6,
-    8,
-    4
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "岿林深山",
-   "image": "s_2_a49216e7-4439-4053-a755-708be23fb01d_0.png",
-   "type": "定位",
-   "hit_position": "千",
-   "hit_numbers": [
-    0,
-    2,
-    4,
-    6,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "岿林深山",
-   "image": "s_2_a49216e7-4439-4053-a755-708be23fb01d_0.png",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    1,
-    3,
-    5,
-    7,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "长龙哥",
-   "image": "s_2_d44c4036-87f6-48c3-9f3f-aaadc7b849fe_0.jpg",
-   "type": "胆码",
-   "hit_position": "百",
-   "hit_numbers": [
-    0,
-    6,
-    7
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "闲人_石头_3360052",
-   "image": "s_2_89cb1711-d096-4a37-a519-762f94fbf259_0.jpg",
-   "type": "胆码",
-   "hit_position": "万",
-   "hit_numbers": [
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "用户_485110591",
-   "image": "s_2_b33d25e5-59b6-46f2-8ff0-0d39667100e8_2.jpg",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    2,
-    8,
-    0,
-    9,
-    4,
-    6,
-    1,
-    7
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "小泉精码",
-   "image": "s_2_0fb88fd8-9c9b-44cb-9cb5-1b66ae253f4c_1.jpg",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "小泉精码",
-   "image": "s_2_0fb88fd8-9c9b-44cb-9cb5-1b66ae253f4c_1.jpg",
-   "type": "定位",
-   "hit_position": "千",
-   "hit_numbers": [
-    0
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "小泉精码",
-   "image": "s_2_0fb88fd8-9c9b-44cb-9cb5-1b66ae253f4c_1.jpg",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "486517481",
-   "image": "s_2_1e59dbb0-4614-460b-b4a3-da045c319213_2.png",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    3,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "长沙韩国艺匠婚纱摄影",
-   "image": "s_2_08056383-b977-4df6-9c96-2aa13841bb12_2.jpg",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "顺风顺水顺财神天天中",
-   "image": "s_2_eb028d3a-4d73-4729-b30a-18dae351fc0e_2.jpeg",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    3,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "486855127",
-   "image": "s_2_1ef2bdaa-a3d7-4f4b-ad5d-510b6a65fbb7_2.jpg",
-   "type": "定位",
-   "hit_position": "个",
-   "hit_numbers": [
-    3,
-    6,
-    9,
-    2,
-    5,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "486628109",
-   "image": "s_2_a81b2f19-035a-42d0-bcb2-2b2e3c8b3281_2.jpg",
-   "type": "胆码",
-   "hit_position": "万",
-   "hit_numbers": [
-    2
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "第6个秋季",
-   "image": "s_2_94815087-a02e-47d8-91c7-88aac786a8db_1.jpg",
-   "type": "胆码",
-   "hit_position": "万",
-   "hit_numbers": [
-    2,
-    9,
-    1
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "郑州杨振_483234701",
-   "image": "s_2_84847070-8aa8-416a-b7d9-b6f09c8aceda_2.jpg",
-   "type": "胆码",
-   "hit_position": "千",
-   "hit_numbers": [
-    3,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "多码宽网（2 码候选）：候选池式，推不出本期唯一结果"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "486855127",
-   "image": "s_2_1ef2bdaa-a3d7-4f4b-ad5d-510b6a65fbb7_0.jpg",
-   "type": "胆码",
-   "hit_position": "十",
-   "hit_numbers": [
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "原来如此1969879",
-   "image": "s_2_ff4b8cf6-283e-4b3d-93e5-ad47e3ba1014_1.jpg",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "未独立二次识读（仅单源视觉识别读数）：图上标记未经第二来源确认，同图可解释为任意数字，按口径不计命中"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "中大奖中大奖中中中",
-   "image": "s_2_d5a7c40d-e205-42e2-89bb-f1f9180026a5_0.jpg",
-   "type": "定位",
-   "hit_position": "个",
-   "hit_numbers": [
-    6,
-    3,
-    0
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "多码宽网（3 码候选）：候选池式，推不出本期唯一结果"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "真龙🐉",
-   "image": "s_2_b28be9ae-a9f1-4dfc-ab6e-4335cc07c853_1.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    2,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "多码宽网（2 码候选）：候选池式，推不出本期唯一结果"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "用户_483977271",
-   "image": "s_2_9514ff5c-98c3-4af9-8f56-aa160f2448f1_0.jpg",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    4,
-    5,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "多码宽网（4 码候选）：候选池式，推不出本期唯一结果"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "生活很无奈",
-   "image": "s_2_abcbba03-9831-46c1-a606-677d631a2051_3.png",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    2
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "未独立二次识读（仅单源视觉识别读数）：图上标记未经第二来源确认，同图可解释为任意数字，按口径不计命中"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "原来如此1969879",
-   "image": "s_2_ff4b8cf6-283e-4b3d-93e5-ad47e3ba1014_0.jpg",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "铁头王",
-   "image": "s_2_d5ea7923-9c90-4583-96d3-04b596b0c8ae_0.png",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    6,
-    7,
-    2,
-    1
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "开奖后发帖（复盘/下期预测，发帖 21:55）：晚于本期开奖，图含本期开奖结果，博主圈的是已知号码"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "袁爽:五花肉",
-   "image": "s_2_a8a63282-1d1e-43d3-a7e9-0415df308201_0.jpg",
-   "type": "胆码",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    5
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "多码宽网（2 码候选）：候选池式，推不出本期唯一结果"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "袁爽:五花肉",
-   "image": "s_2_a8a63282-1d1e-43d3-a7e9-0415df308201_0.jpg",
-   "type": "胆码",
-   "hit_position": "万",
-   "hit_numbers": [
-    2,
-    7
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "袁爽:五花肉",
-   "image": "s_2_a8a63282-1d1e-43d3-a7e9-0415df308201_0.jpg",
-   "type": "胆码",
-   "hit_position": "个",
-   "hit_numbers": [
-    0,
-    5
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "陈靖可Chan",
-   "image": "s_2_7f270b95-025a-4b45-a424-ea30b6863a40_1.jpg",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    0,
-    1,
-    2
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "多码宽网（3 码候选）：候选池式，推不出本期唯一结果"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "中到你不中",
-   "image": "s_2_66474e24-0687-432e-8b6b-50ef7a83c194_1.png",
-   "type": "胆码",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "多码宽网（2 码候选）：候选池式，推不出本期唯一结果"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "中到你不中",
-   "image": "s_2_66474e24-0687-432e-8b6b-50ef7a83c194_0.png",
-   "type": "胆码",
-   "hit_position": "千",
-   "hit_numbers": [
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "小泉精码",
-   "image": "s_2_056c9f61-92a4-4ff5-b1ac-f7446fc380c2_0.jpg",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "海南五七学堂",
-   "image": "s_2_f390c555-fe7c-45fa-962d-2e4181e2361e_1.jpg",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    2,
-    0
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "开奖后发帖（复盘/下期预测，发帖 22:24）：晚于本期开奖，图含本期开奖结果，博主圈的是已知号码"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "同花大顺",
-   "image": "s_2_eb30dafe-0f74-4e2c-8f3c-ee11a78d2a2e_2.jpg",
-   "type": "胆码",
-   "hit_position": "十",
-   "hit_numbers": [
-    9,
-    2,
-    5,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "多码宽网（4 码候选）：候选池式，推不出本期唯一结果"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "真龙🐉",
-   "image": "s_2_b28be9ae-a9f1-4dfc-ab6e-4335cc07c853_6.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    8,
-    2,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "关心❤️",
-   "image": "s_2_61fd6723-5f8d-4807-922b-2b6a36677e8e_1.jpg",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    2
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "开奖后发帖（复盘/下期预测，发帖 22:12）：晚于本期开奖，图含本期开奖结果，博主圈的是已知号码"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "关心❤️",
-   "image": "s_2_61fd6723-5f8d-4807-922b-2b6a36677e8e_1.jpg",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "小目标ww",
-   "image": "s_2_2cab0170-c132-48cc-9ac3-9ceff4d31fa2_5.jpg",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    2,
-    5,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "开奖后发帖（复盘/下期预测，发帖 21:48）：晚于本期开奖，图含本期开奖结果，博主圈的是已知号码"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "小目标ww",
-   "image": "s_2_2cab0170-c132-48cc-9ac3-9ceff4d31fa2_5.jpg",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    0,
-    2,
-    5,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "小目标ww",
-   "image": "s_2_dbced424-4a59-4b43-9956-bcebcc18f854_2.jpg",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    0,
-    2,
-    5,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "小目标ww",
-   "image": "s_2_dbced424-4a59-4b43-9956-bcebcc18f854_2.jpg",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    0,
-    2,
-    5,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "铁头王",
-   "image": "s_2_d5ea7923-9c90-4583-96d3-04b596b0c8ae_1.png",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    2
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "铁头王",
-   "image": "s_2_d5ea7923-9c90-4583-96d3-04b596b0c8ae_1.png",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "铁头王",
-   "image": "s_2_d5ea7923-9c90-4583-96d3-04b596b0c8ae_2.png",
-   "type": "定位",
-   "hit_position": "千",
-   "hit_numbers": [
-    0
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "一規至尊",
-   "image": "s_2_546b44f9-d0b1-49fa-88a0-6fbd61e66a7a_0.jpg",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "未独立二次识读（仅单源视觉识别读数）：图上标记未经第二来源确认，同图可解释为任意数字，按口径不计命中"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "小钉子2688335",
-   "image": "s_2_a8d2b370-3571-4481-85aa-c76fb6a06492_0.png",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "开奖后发帖（复盘/下期预测，发帖 22:12）：晚于本期开奖，图含本期开奖结果，博主圈的是已知号码"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "小钉子2688335",
-   "image": "s_2_a8d2b370-3571-4481-85aa-c76fb6a06492_0.png",
-   "type": "定位",
-   "hit_position": "个",
-   "hit_numbers": [
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "生活很无奈",
-   "image": "s_2_abcbba03-9831-46c1-a606-677d631a2051_4.png",
-   "type": "胆码",
-   "hit_position": "个",
-   "hit_numbers": [
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "不知道啥时候能中个奖",
-   "image": "s_2_59f7d638-d058-4a99-99e7-af002db39abc_0.jpg",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "开奖后发帖（复盘/下期预测，发帖 21:49）：晚于本期开奖，图含本期开奖结果，博主圈的是已知号码"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "不知道啥时候能中个奖",
-   "image": "s_2_59f7d638-d058-4a99-99e7-af002db39abc_0.jpg",
-   "type": "定位",
-   "hit_position": "个",
-   "hit_numbers": [
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "486628109",
-   "image": "s_2_a81b2f19-035a-42d0-bcb2-2b2e3c8b3281_3.jpg",
-   "type": "胆码",
-   "hit_position": "万",
-   "hit_numbers": [
-    2
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "长虹老史",
-   "image": "s_2_b93b739c-cd6e-49e4-9dd6-0550562e901f_2.png",
-   "type": "定位",
-   "hit_position": "千",
-   "hit_numbers": [
-    0
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "开奖后发帖（复盘/下期预测，发帖 23:01）：晚于本期开奖，图含本期开奖结果，博主圈的是已知号码"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "长虹老史",
-   "image": "s_2_b93b739c-cd6e-49e4-9dd6-0550562e901f_2.png",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    2
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "长虹老史",
-   "image": "s_2_b93b739c-cd6e-49e4-9dd6-0550562e901f_0.png",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    2
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "用户_秦小姐",
-   "image": "s_2_27238e5f-96c2-46cf-a982-c3344325f054_1.png",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "未独立二次识读（仅单源视觉识别读数）：图上标记未经第二来源确认，同图可解释为任意数字，按口径不计命中"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "________1958401",
-   "image": "s_2_4396c431-887e-4a60-ba3b-a24aee5155f0_0.png",
-   "type": "定位",
-   "hit_position": "千",
-   "hit_numbers": [
-    0
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "开奖后发帖（复盘/下期预测，发帖 22:19）：晚于本期开奖，图含本期开奖结果，博主圈的是已知号码"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "486845749",
-   "image": "s_2_526021d1-dea2-4c4a-8423-6bc77236b90f_5.jpg",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "开奖后发帖（复盘/下期预测，发帖 23:26）：晚于本期开奖，图含本期开奖结果，博主圈的是已知号码"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "486845749",
-   "image": "s_2_526021d1-dea2-4c4a-8423-6bc77236b90f_5.jpg",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    2
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "486845749",
-   "image": "s_2_526021d1-dea2-4c4a-8423-6bc77236b90f_6.jpg",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    2,
-    1,
-    0,
-    6
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "486845749",
-   "image": "s_2_526021d1-dea2-4c4a-8423-6bc77236b90f_6.jpg",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "486845749",
-   "image": "s_2_526021d1-dea2-4c4a-8423-6bc77236b90f_8.jpg",
-   "type": "定位",
-   "hit_position": "百",
-   "hit_numbers": [
-    2
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "486845749",
-   "image": "s_2_526021d1-dea2-4c4a-8423-6bc77236b90f_0.jpg",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "486845749",
-   "image": "s_2_526021d1-dea2-4c4a-8423-6bc77236b90f_0.jpg",
-   "type": "定位",
-   "hit_position": "千",
-   "hit_numbers": [
-    0
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "用规说话",
-   "image": "s_2_60de1875-2b2e-478d-88e5-e47b1d17cd7b_3.jpg",
-   "type": "定位",
-   "hit_position": "千",
-   "hit_numbers": [
-    0,
-    5
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "多码宽网（2 码候选）：候选池式，推不出本期唯一结果"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "乐乐真乖",
-   "image": "s_2_0d7962a7-4b15-46f5-9641-f6ab46c5f5a8_0.png",
-   "type": "胆码",
-   "hit_position": "万",
-   "hit_numbers": [
-    5,
-    2,
-    9,
-    1
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "多码宽网（4 码候选）：候选池式，推不出本期唯一结果"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "486517481",
-   "image": "s_2_1e59dbb0-4614-460b-b4a3-da045c319213_7.png",
-   "type": "定位",
-   "hit_position": "十",
-   "hit_numbers": [
-    1,
-    3,
-    4,
-    6,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "486517481",
-   "image": "s_2_1e59dbb0-4614-460b-b4a3-da045c319213_7.png",
-   "type": "胆码",
-   "hit_position": "个",
-   "hit_numbers": [
-    2
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "陈皎皎_483237109",
-   "image": "s_2_ffd929f0-c147-4028-b3af-a1ae59d8d4b8_2.jpg",
-   "type": "定位",
-   "hit_position": "万",
-   "hit_numbers": [
-    4,
-    9,
-    8,
-    2
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "多码宽网（4 码候选）：候选池式，推不出本期唯一结果"
   },
   {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "486517481",
-   "image": "s_2_1e59dbb0-4614-460b-b4a3-da045c319213_8.png",
-   "type": "定位",
-   "hit_position": "千",
-   "hit_numbers": [
-    0,
-    3,
-    4,
-    5,
-    8,
-    9
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
-   "blogger": "用规说话",
-   "image": "s_2_54d572ba-edeb-4ba6-9197-bbb6cb7d0621_3.jpg",
-   "type": "定位",
-   "hit_position": "个",
-   "hit_numbers": [
-    3
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
-  },
-  {
-   "period": "26232",
-   "draw": "8 0 2 3 3",
    "blogger": "蒋娅楠-好菇凉爹妈造Datura",
-   "image": "s_2_b3c8aa25-8d80-475e-a375-e3739863c3c5_1.jpg",
-   "type": "头",
-   "hit_position": "万",
-   "hit_numbers": [
-    2,
-    5,
-    8
-   ],
-   "multi": null,
-   "predicted_positions": null,
-   "pos_check": null,
-   "logic": null
+   "reason": "多码宽网（3 码候选）：候选池式，推不出本期唯一结果"
   }
  ],
- "rule_count": 70
+ "rules": [],
+ "rule_count": 0
 }

@@ -44,12 +44,19 @@ def main():
     ap.add_argument("--verify", required=True, help="blogger_predictions_verify.json")
     ap.add_argument("--period", required=True)
     ap.add_argument("--draw", required=True)
+    ap.add_argument("--guihua", default=None,
+                    help="guihua_<period>_consensus.json: 每张命中原图的真实画规 "
+                         "{file:{画法描述,画规类型,推导逻辑}} —— 覆盖通用兜底逻辑")
     ap.add_argument("--out-dir", default=OUT_DIR)
     args = ap.parse_args()
 
     verify = json.load(open(args.verify, encoding="utf-8"))
     stats = verify.get("统计", {})
     images = verify.get("images", {})
+    guihua = None
+    if args.guihua and os.path.exists(args.guihua):
+        guihua = json.load(open(args.guihua, encoding="utf-8"))
+        guihua = guihua.get("images", guihua)
     draw = [int(x) for x in args.draw.split()]
     ACTUAL = dict(zip(["万", "千", "百", "十", "个"], draw))
     DRAW = args.draw
@@ -92,25 +99,40 @@ def main():
     for h in hit_recs:
         pos = norm_pos(h["位置"])
         pos_check = {pos: f"候选{h['候选']} 含实际{ACTUAL.get(pos)} ✓"}
+        # 画规逻辑：优先真画规（guihua consensus，读原图+交叉验证），否则兜底串
+        gui = (guihua or {}).get(h["file"], {})
+        if isinstance(gui, dict):
+            logic = (gui.get("画法描述") or gui.get("consensus", {}).get("画法描述")
+                     or h.get("logic", "") or "博主在目标期行手写" + h["位置"] + "=" + ",".join(map(str, h["候选"])))
+            gui_type = gui.get("画规类型") or gui.get("consensus", {}).get("画规类型", "")
+            deduc = gui.get("推导逻辑") or gui.get("consensus", {}).get("推导逻辑", "")
+        else:
+            logic = h.get("logic", "") or "博主在目标期行手写" + h["位置"] + "=" + ",".join(map(str, h["候选"]))
+            gui_type = deduc = ""
         rules.append({
             "period": PERIOD, "draw": DRAW, "blogger": h["blogger"], "image": h["file"],
             "type": "定位", "hit_position": h["位置"], "hit_numbers": h["候选"],
             "multi": "1位置1中", "predicted_positions": h["predicted_positions"],
             "pos_check": pos_check,
-            "logic": h.get("logic", "") or "博主在目标期行手写" + h["位置"] + "=" + ",".join(map(str, h["候选"]))
+            "logic": logic,
+            "画规类型": gui_type, "推导逻辑": deduc,
+            "logic_source": "guihua-crossval" if gui_type or deduc else ("glm" if h.get("logic") else "fallback")
         })
 
-    # rejected：按博主去重（保留一条），规则与 26230 一致
+    # rejected：按博主去重（保留一条），规则与 26230 一致。
+    # 凡已确认命中的博主（rules 里已有）不再进"被剔除"，避免"既命中又被剔除"的矛盾
+    # （如富老师有多图：_0 万1命中，但 _5/_6 读图失败——后者不该让整博主显示为"被剔除"）。
+    hit_bloggers = {h["blogger"] for h in hit_recs}
     rejected = []
     seen = set()
     for r in nonhit_recs:
         b = r["blogger"]
-        if b not in seen:
+        if b not in hit_bloggers and b not in seen:
             seen.add(b)
             rejected.append({"blogger": b,
                              "reason": f"{pos_why(r['cls'])}（{r['位置']} 候选{r['候选']} 实际{r['x']}）"})
     for e in excluded_imgs:
-        if e["blogger"] and e["blogger"] not in seen:
+        if e["blogger"] and e["blogger"] not in hit_bloggers and e["blogger"] not in seen:
             seen.add(e["blogger"])
             rejected.append({"blogger": e["blogger"], "reason": e["reason"]})
 
@@ -128,7 +150,7 @@ def main():
     L.append(f"> 采集记录：**{total_collect} 条** ｜ 命中：**{n_hit} 条（{hit_rate:.2%}）** ｜ 完全命中（1位置1中）：{n_full} 条")
     L.append(f"> 规律条数：**{len(rules)} 条**")
     L.append("")
-    L.append("| 博主 | 命中位置 | 全图预测明细（各位置对错） | 博主画规逻辑 |")
+    L.append("| 博主 | 命中位置 | 全图预测明细（各位置对错） | 博主画规逻辑（读原图+交叉验证） |")
     L.append("|---|---|---|---|")
     for r in rules:
         details = []
@@ -138,7 +160,11 @@ def main():
             a = ACTUAL.get(pp, "?")
             ok = "✓" if (a is not None and a in (p["候选"] or [])) else "✗"
             details.append(f"{pp}{cand}{ok}(实际{a})")
-        L.append(f"| {r['blogger']} | 定位 {r['hit_position']}={','.join(map(str,r['hit_numbers']))} → {PERIOD} {r['hit_position']}={ACTUAL.get(norm_pos(r['hit_position']))} ✓ | {'；'.join(details)} | {r['logic']} |")
+        if r.get("画规类型"):
+            logic_cell = r["logic"] + (f"【画规类型：{r['画规类型']}】" if r["画规类型"] else "")
+        else:
+            logic_cell = r["logic"]
+        L.append(f"| {r['blogger']} | 定位 {r['hit_position']}={','.join(map(str,r['hit_numbers']))} → {PERIOD} {r['hit_position']}={ACTUAL.get(norm_pos(r['hit_position']))} ✓ | {'；'.join(details)} | {logic_cell} |")
     L.append("")
     L.append("## 被剔除的命中（本期修正）")
     L.append("")
