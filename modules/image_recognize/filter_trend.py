@@ -63,7 +63,7 @@ import numpy as np  # noqa: E402
 
 from common import REPO, load_json, write_json, fix_print  # noqa: E402
 from crop_all import process_one  # noqa: E402
-from cv_trend_reader.reader import load, ocr_digits, detect_annotations  # noqa: E402
+from cv_trend_reader.reader import load, ocr_digits, detect_annotations, cnn_available  # noqa: E402
 from cv_trend_reader.analyze_grid import match_period  # noqa: E402
 
 # 白名单正则防临时图污染(与 crop_all 同口径)
@@ -184,12 +184,13 @@ def ocr_period_robust(img, rows, row_half):
     return {"period": "", "attempts": tried}
 
 
-def period_pairs(img, rows, row_half, lottery):
+def period_pairs(img, rows, row_half, lottery, engine=None):
     """v2 强化: 从底部多行读取期号, 与开奖历史做"连续性"配对。
     返回:
       pairs:   [{row, period, period_full, matched:bool}] 按行序(底部在前)
       matched_periods: [期号, ...] (已与开奖历史匹配的)
-    多期连续且都匹配开奖 → 期号高置信; 单行读到、无连续佐证 → 弱置信。"""
+    多期连续且都匹配开奖 → 期号高置信; 单行读到、无连续佐证 → 弱置信。
+    engine: None=取环境(auto/默认); 显式 cnn/tesseract 强制该引擎(复核用)。"""
     h, w = img.shape[:2]
     x1 = max(200, int(w * 0.32))
     pairs = []
@@ -207,7 +208,7 @@ def period_pairs(img, rows, row_half, lottery):
         best = ""
         for psm, up, thr in PERIOD_COMBOS:
             try:
-                res = ocr_digits(roi, psm=psm, upscale=up, threshold=thr)
+                res = ocr_digits(roi, psm=psm, upscale=up, threshold=thr, engine=engine)
             except Exception:
                 continue
             s = "".join(str(d) for d, _ in res)
@@ -220,6 +221,26 @@ def period_pairs(img, rows, row_half, lottery):
                           "period_full": m["period"] if m else None,
                           "matched": m is not None})
     return pairs
+
+
+def period_verify_tesseract(img, rows, row_half, lottery, target_period, window):
+    """tesseract 复核 CNN 判的 stale-period(期号在窗口外 → 排除)。
+
+    CNN 单字 ~79% 会把近期期号尾位读错 1 位 → 锚点跳出 ±5 窗口 → 误排除不可逆。
+    该复核只对"将排除为 stale"的图触发(每期 ~26-40 张), 成本可忽略。
+    返回 {"ok_recent": bool|None, pairs, matched, gap}:
+      ok_recent True  = tesseract 读到窗口内期号 → 证伪 CNN 的 stale(近期图, 应保留)
+      ok_recent False = tesseract 也读到匹配期号但都在窗口外 → 证实旧图(应排除)
+      ok_recent None  = tesseract 读不到任何匹配期号 → 无法判定(保守送视觉, 不排除)
+    """
+    pairs = period_pairs(img, rows, row_half, lottery, engine="tesseract")
+    matched = [p["period_full"] for p in pairs if p["matched"]]
+    if not matched:
+        return {"ok_recent": None, "pairs": pairs, "matched": matched, "gap": None}
+    recent = max(int(x) for x in matched)
+    gap = int(target_period) - recent
+    return {"ok_recent": 0 <= gap <= window, "pairs": pairs,
+            "matched": matched, "gap": gap}
 
 
 def period_confidence(pairs, target_period, lottery):
@@ -314,7 +335,13 @@ def classify_image(img, path, lottery, target_period, window):
         return "exclude", {**info, "reason": "no-chart"}
 
     # ---- S1 期号多期连续性 ----
-    pairs = period_pairs(img, rows, row_half, lottery)
+    # 主路引擎(方案A): 未显式 OCR_ENGINE 时主路固定 CNN(不回退 tesseract —— auto 的
+    # "CNN 失败→tesseract 逐行兜底"会在大片 CNN 读不出的图上退化成旧 tesseract 全成本,
+    # 实测 >13min 才 583 张没跑完)。tesseract 只在下方 stale-period 边界做复核。
+    #   unset/auto/hybrid/cnn → 主路 cnn;  tesseract → 主路 tesseract(A/B 基线复现)。
+    env_engine = os.environ.get("OCR_ENGINE", "auto")
+    main_engine = "tesseract" if env_engine == "tesseract" else "cnn"
+    pairs = period_pairs(img, rows, row_half, lottery, engine=main_engine)
     pconf, matched_periods = period_confidence(pairs, target_period, lottery)
     info["period_pairs"] = pairs
     info["period_matched"] = matched_periods
@@ -346,7 +373,37 @@ def classify_image(img, path, lottery, target_period, window):
     recent = max(int(x) for x in matched_periods)
     gap = int(target_period) - recent
     info["gap"] = gap
-    if gap < 0 or gap > window:
+    stale = (gap < 0 or gap > window)
+    if stale and os.environ.get("OCR_ENGINE", "auto") in ("auto", "hybrid") and cnn_available():
+        # 混合策略(方案A): CNN 主路快读; 仅此"将排除为 stale"的边界用 tesseract 复核。
+        # CNN 单字 ~79% 会把近期期号尾位读错 1 位 → 锚点跳出窗口 → 误排除不可逆
+        # (A/B 实测 bcc9fbba_3: tess 26233 vs cnn 26222; d2efe7ee_1: 26232 vs 26212)。
+        tv = period_verify_tesseract(img, rows, row_half, lottery,
+                                     target_period, window)
+        info["period_verify"] = "tesseract:" + (
+            "refutes-stale" if tv["ok_recent"] is True else
+            ("confirms-stale" if tv["ok_recent"] is False else "unreadable"))
+        if tv["ok_recent"] is True:
+            # tesseract 证伪: 图是近期的, CNN 读错 → 换用 tesseract 锚定, 走下方 keep 逻辑
+            stale = False
+            pairs = tv["pairs"]
+            matched_periods = tv["matched"]
+            pconf = period_confidence(pairs, target_period, lottery)[0]
+            gap = tv["gap"]
+            info["period_pairs"] = pairs
+            info["period_matched"] = matched_periods
+            info["period_conf"] = pconf
+            info["gap"] = gap
+        elif tv["ok_recent"] is False:
+            # tesseract 也确认旧图 → 真 stale, 照常排除
+            return "exclude", {**info, "reason": "stale-period", "confidence": "med"}
+        else:
+            # tesseract 读不出任何匹配期号 → 无法证实旧图, 保守不排除 → 送视觉
+            # (该图在纯 tesseract 时代也是 period-weak→uncertain, 不会丢)
+            return "uncertain", {**info, "reason": "period-weak",
+                                 "confidence": "low",
+                                 "note": "cnn-stale 未被 tesseract 证实, 保守送视觉"}
+    if stale:
         return "exclude", {**info, "reason": "stale-period", "confidence": "med"}
 
     # gap 在窗口内: 期号已读到目标附近(无论 high/weak) → 直接按标注质量分 keep。

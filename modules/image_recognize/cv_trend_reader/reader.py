@@ -220,6 +220,12 @@ def _cnn_backend():
     return _CNN or None
 
 
+def cnn_available():
+    """digit_cnn 模型可用? auto 引擎有模型即走 CNN; 调用方(如 filter_trend 混合策略)
+    据此判断"主路用了 CNN, 需要 tesseract 复核边界"。首次调用会加载模型。"""
+    return _cnn_backend() is not None
+
+
 def segment_digits_cc(bw, roi_h):
     """连通域切分数字。过滤小噪点 + 触顶/触底竖线(边框/网格线) + 粘连宽组件投影谷切开。
 
@@ -382,14 +388,15 @@ def ocr_digits_cnn(img_roi, thresholds=(235, 210, 220, 180, 150, 120, 90, 60),
 
 
 def ocr_digits(img_roi, psm=7, whitelist="0123456789", upscale=4,
-               threshold=120):
-    """读 ROI 中的数字。OCR 引擎由环境变量 OCR_ENGINE 控制:
+               threshold=120, engine=None):
+    """读 ROI 中的数字。OCR 引擎由 engine 或环境变量 OCR_ENGINE 控制:
       auto(默认) = CNN 可用则 CNN, 否则 tesseract; cnn / tesseract 强制指定。
+    engine 显式传入优先于环境变量 —— 线程池并发下避免 os.environ 竞态。
 
     CNN 返回 [(digit, conf)], conf=0~1; tesseract 返回 conf=100。
     调用方(期号校验/配对)只取数字串, 两种引擎输出格式一致。
     """
-    engine = os.environ.get("OCR_ENGINE", "auto")
+    engine = engine or os.environ.get("OCR_ENGINE", "auto")
     if engine in ("cnn", "auto"):
         res = ocr_digits_cnn(img_roi)
         if res:

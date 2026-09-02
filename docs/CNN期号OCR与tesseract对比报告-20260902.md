@@ -3,7 +3,8 @@
 > 目标（Step 1）：用本地 digit_cnn 识别走势图期号列，替代 tesseract 子进程 OCR。
 > 判定标准：CNN 能读出 **连续若干期、对应期号正确匹配开奖历史** → filter_trend 的
 > period_pairs / period_confidence（≥2 匹配期靠近 target）据此判"走势图"。
-> 本报告 = 20260831 全量 583 图，`OCR_ENGINE=tesseract`（基线）vs `OCR_ENGINE=cnn` 决策 A/B。
+> 本报告 = 20260831 全量 583 图，`OCR_ENGINE=tesseract`（基线）vs `OCR_ENGINE=cnn` 决策 A/B，
+> 及 §8 **方案A（CNN 主路 + tesseract stale 边界复核）落地全量结果**。
 > 本次会话无视觉模型，核验靠 ASCII 字符画 + 引擎间互证，未做像素级人工目检。
 
 ---
@@ -119,10 +120,63 @@ CNN（20260831）               : 583 图  54.2s ≈ 10.8 张/s ≈ 0.093s/张
 
 ---
 
+## 8. 方案A 已落地：CNN 主路 + tesseract stale 边界复核（20260902 全量）
+
+按 §7 建议实现并全量跑通（`filter_trend.py` + `reader.ocr_digits(engine=)`），
+产物 `data/crawl/20260831/filter_report_hybrid.json`（67.3s / 583 图 ≈ 8.7 张/s）。
+
+### 引擎接线（避免 auto 静默陷阱 + 兜底退化）
+
+- **主路固定 CNN**：`OCR_ENGINE` 未显式设置时 filter 主路解析为 `cnn`（auto/hybrid/cnn 同义）；
+  显式 `OCR_ENGINE=tesseract` 才回退 tesseract 主路（A/B 基线复现）。
+- **tesseract 只在 stale-period 边界复核**（`period_verify_tesseract`）。
+  ⚠️ 实施中发现陷阱：reader 的 `auto` 引擎是"CNN 读不出→tesseract 逐行兜底"。
+  若主路用 auto，CNN 读不出的 ~424 张会静默退化成旧 tesseract 全成本
+  （每个底行 ×6 组合起子进程；实测首版 583 张跑 >13min 未完成）。
+  → 主路必须显式 cnn 不回退，复核再显式 tesseract。
+
+### 全量三方对比（583 图）
+
+| 决策 | tesseract 基线 | 纯 CNN | **混合（方案A）** |
+|---|---|---|---|
+| keep-high | 28 | 45 | **45**（CNN 恢复面保留）|
+| keep-med | 106 | 88 | **90**（误剔 2 张救回）|
+| uncertain | 285 | 274 | **286** |
+| exclude 合计 | 164 | 176 | **162** |
+| ├ no-chart | 80 | 80 | 80 |
+| ├ anno-trivial | 55 | 53 | 53 |
+| ├ no-anno | 17 | 17 | 17 |
+| └ **stale-period** | **12** | **26** | **12** |
+
+### stale 复核裁判（触发 26 张）
+
+| 裁判 | 张数 | 处置 | 语义 |
+|---|---|---|---|
+| refutes-stale | 2 | keep-med | tesseract 读到窗口内期号 → CNN 尾位读错证伪（bcc9fbba_3 `26233`、d2efe7ee_1 `26232`）|
+| confirms-stale | 12 | exclude | tesseract 也读到匹配期但全在窗外 → 真旧图，排除（= 基线 12 张）|
+| unreadable | 12 | uncertain/period-weak | tesseract 读不出 → 无法证实旧图，**不排除**送视觉 |
+
+### 结论
+
+方案A 拿到 CNN 的全部收益、tesseract 的零误排除：
+- **0 张新增 exclude**（基线里 keep/uncertain 无一流向 exclude）；还救回 2 张基线误剔
+  （bcc9fbba_3 / d2efe7ee_1，各 11-12 行标注的近期图）。
+- 反而 **2 张基线 exclude/anno-trivial 被救回**（CNN 读到 tesseract 读不出的期号
+  afef0a46 `26211/26212`、da7d2b43 `26218` → uncertain 送视觉）。
+- keep-high 28→45 保留（CNN 恢复连续期锚定的唯一价值不动摇）。
+- **耗时 67.3s ≈ 纯 CNN 54.2s（+13s = 26 张复核）**，较 tesseract 全量（~7.4s/张量级）
+  **≈ 60× 加速**，stale 排除的"省视觉"能力（12 张真旧图不送视觉）保留。
+- 每次周期复核仅 ~26 张 → tesseract 子进程成本可忽略；auto 静默切 CNN 的缺陷随本方案消除
+  （auto 主路现在就是 CNN + 边界复核，可安全作默认）。
+
+---
+
 ## 产物
 
 - `data/crawl/20260831/filter_report_cnn.json`（CNN 全量决策报告）
+- `data/crawl/20260831/filter_report_hybrid.json`（**方案A 混合全量决策报告，67.3s**）
 - `/tmp/eval_cnn_20260831.log`（CNN 行级评估）
 - `/tmp/compare_cnn_20260831.log`（决策差异明细）
 - 训练：`modules/image_recognize/train_digits_preaug.py`，模型 `model/digit_cnn.pt`（best 0.7285）
-- 本轮模型/reader 改动均已在本仓库，未提交部分见 git status。
+- 代码改动：`filter_trend.py`（主路 cnn + `period_verify_tesseract` 复核）、
+  `reader.py`（`ocr_digits(engine=)`、`cnn_available()`）
