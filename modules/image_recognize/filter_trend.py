@@ -54,6 +54,7 @@ import os
 import re
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -361,6 +362,17 @@ def classify_image(img, path, lottery, target_period, window):
     return "keep-med", {**info, "confidence": "low", "note": "标注质量信息缺失,保守保留"}
 
 
+def classify_one_worker(p, lottery, target_period, window):
+    """单图分类(线程 worker)。load + classify 都在 worker 内做, 并行化 I/O 与 OCR。"""
+    try:
+        img = load(p)
+        if img is None:
+            return "exclude", {"reason": "unreadable", "image_size": [0, 0]}
+        return classify_image(img, p, lottery, target_period, window)
+    except Exception as e:
+        return "exclude", {"reason": "error", "error": str(e)[:150]}
+
+
 def main():
     fix_print()
     ap = argparse.ArgumentParser()
@@ -369,6 +381,10 @@ def main():
     ap.add_argument("--lottery", required=True)
     ap.add_argument("--window", type=int, default=5)
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--workers", type=int, default=16,
+                    help="多线程并发数(默认 16; tesseract 是子进程, 等子进程时释放 GIL, 可并行)")
+    ap.add_argument("--out", help="输出 filter_report 路径(默认 data/crawl/<date>/filter_report.json, "
+                    "用于 OCR 引擎 A/B 对比时指定不同输出)")
     args = ap.parse_args()
 
     lottery = load_json(args.lottery) or []
@@ -385,24 +401,31 @@ def main():
         files = files[:args.limit]
 
     t0 = time.time()
+    prog_every = max(1, min(25, len(files) // 10))   # 每 ~25 张打一次进度(小样本自适配)
+    results, done = {}, 0
+    with ThreadPoolExecutor(max_workers=args.workers) as ex:
+        futs = {ex.submit(classify_one_worker, os.path.join(img_dir, f),
+                          lottery, args.target_period, args.window): f for f in files}
+        for fut in as_completed(futs):
+            f = futs[fut]
+            decision, info = fut.result()
+            results[f] = {"decision": decision, **info}
+            done += 1
+            if done % prog_every == 0 or done == len(files):
+                el = time.time() - t0
+                print(f"[filter] 进度 {done}/{len(files)} ({el:.0f}s, "
+                      f"{done / el:.1f} 张/s) ...", flush=True)
+
+    # 按 files 顺序落盘(与串行版逐位一致), 同时累加 summary
     images, summary = {}, {
         "keep_high": 0, "keep_med": 0,
-        "uncertain": {"period_weak": 0, "anno_weak": 0},
+        "uncertain": {"period-weak": 0, "anno-weak": 0},
         "exclude": {},
     }
     for f in files:
-        p = os.path.join(img_dir, f)
-        try:
-            img = load(p)
-            if img is None:
-                decision, info = "exclude", {"reason": "unreadable", "image_size": [0, 0]}
-            else:
-                decision, info = classify_image(img, p, lottery, args.target_period,
-                                                args.window)
-        except Exception as e:
-            decision, info = "exclude", {"reason": "error", "error": str(e)[:150]}
-        info = {"decision": decision, **info}
+        info = results[f]
         images[f] = info
+        decision = info["decision"]
         if decision == "keep-high":
             summary["keep_high"] += 1
         elif decision == "keep-med":
@@ -424,7 +447,7 @@ def main():
         "summary": summary,
         "images": images,
     }
-    out = os.path.join(REPO, "data", "crawl", args.date, "filter_report.json")
+    out = args.out or os.path.join(REPO, "data", "crawl", args.date, "filter_report.json")
     write_json(report, out)
     print(f"[filter] DONE {len(files)} 张 {time.time()-t0:.1f}s")
     print(f"[filter] summary: {summary}")

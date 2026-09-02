@@ -25,6 +25,7 @@ import os
 import re
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import cv2
 import numpy as np
@@ -284,12 +285,70 @@ def write_exclude_list(results, out_root):
     return path
 
 
+def process_one_ranked(rank, path, out_root):
+    """单图全流程(线程 worker): 字色分类 + 行网格 + 标注行检测 + 裁剪落盘。
+    与串行版逐位一致 —— rank 预分配(enumerate 序), 目录名/字段稳定; 各图写独立目录, 线程安全。"""
+    name = os.path.basename(path)
+    sz = os.path.getsize(path)
+    rec = {"file": name, "size_bytes": sz, "size_kb": sz // 1024}
+    try:
+        status, info, grid = process_one(path)
+        rec.update(info)
+        rec["status"] = status
+        if status == "cropped":
+            d = os.path.join(out_root, f"{rank:03d}_{sz // 1024}KB_{os.path.splitext(name)[0]}")
+            os.makedirs(d, exist_ok=True)
+            img = cv2.imread(path)
+            rows, x0, x1 = grid["rows"], grid["x0"], grid["x1"]
+            filled = grid.get("filled")
+            row_half = rec.get("row_half", ROW_HALF)
+            strips = []
+            for i in rec["annotated_rows"]:
+                y = int(rows[i])
+                y0, y1 = max(0, y - row_half), min(img.shape[0], y + row_half)
+                strips.append((i, img[y0:y1, x0:x1].copy()))
+            anno_stack = build_stack(strips, x1 - x0)
+            if anno_stack is not None:
+                cv2.imwrite(os.path.join(d, "02_annotated.png"), anno_stack)
+            # 全行栈(对齐绿字路径 01_rows): 只取有内容行, 越界行排除
+            if filled is None:
+                filled = filled_rows(
+                    cv2.morphologyEx(
+                        COLOR_MASKS[rec["digit_color"]](*cv2.split(img)).astype(np.uint8),
+                        cv2.MORPH_OPEN, np.ones((3, 3), np.uint8)), rows, x0, x1)
+            filled_idx = [i for i in range(len(rows)) if i < len(filled) and filled[i]]
+            full_strips = [(i, img[max(0, int(rows[i]) - row_half):min(img.shape[0], int(rows[i]) + row_half), x0:x1].copy())
+                           for i in filled_idx]
+            full_stack = build_stack(full_strips, x1 - x0)
+            if full_stack is not None:
+                cv2.imwrite(os.path.join(d, "01_rows.png"), full_stack)
+            # debug: 原图画标注行框
+            dbg = img.copy()
+            for i in rec["annotated_rows"]:
+                y = int(rows[i])
+                cv2.rectangle(dbg, (x0, max(0, y - row_half)), (x1, min(img.shape[0], y + row_half)),
+                              (255, 0, 0), 3)
+                cv2.putText(dbg, f"row{i}", (x0 + 6, max(24, y - row_half + 28)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 0, 0), 2)
+            cv2.imwrite(os.path.join(d, "03_debug.png"), dbg)
+            rec["crop_dir"] = os.path.relpath(d, out_root)
+    except Exception as e:
+        rec["status"] = "error"
+        rec["error"] = str(e)[:200]
+    return rank, name, rec
+
+
 def main():
     fix_print()
     ap = argparse.ArgumentParser()
     ap.add_argument("--date", required=True)
     ap.add_argument("--out", default=None)
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--workers", type=int, default=16,
+                    help="多线程并发数(默认 16; 纯 OpenCV/numpy 释放 GIL, 可并行)")
+    ap.add_argument("--filter", default=None,
+                    help="filter_report.json 路径: 只裁剪 keep/uncertain 图"
+                         "(即②确定后待送视觉的数量, 排除 283 张已确定性剔除的废图)")
     args = ap.parse_args()
 
     img_dir = os.path.join(REPO, "data", "crawl", args.date, "images")
@@ -300,83 +359,65 @@ def main():
         print(f"[crop_all] 无图片: {img_dir}")
         sys.exit(2)
     files.sort(key=lambda f: os.path.getsize(f), reverse=True)
+    n_all = len(files)
+    if args.filter:
+        fr = load_json(args.filter) or {}
+        if not fr.get("images"):
+            print(f"[crop_all] 读不到 filter_report images: {args.filter}")
+            sys.exit(2)
+        keep = {f for f, r in fr["images"].items()
+                if (r.get("decision") or "").startswith(("keep", "uncertain"))}
+        files = [p for p in files if os.path.basename(p) in keep]
+        print(f"[crop_all] --filter: {len(keep)} 张 keep/uncertain 送视觉, "
+              f"源目录命中 {len(files)} 张 (剔除 {n_all - len(files)} 张 filter 已排除)",
+              flush=True)
     if args.limit:
         files = files[:args.limit]
     out_root = args.out or os.path.join(REPO, "data", "recognize", f"{args.date}_all")
     os.makedirs(out_root, exist_ok=True)
 
     results = {"date": args.date, "sorted_by": "file_size_desc", "n_total": len(files), "images": {}}
+    if args.filter:
+        results["n_source_images"] = n_all
+        results["filtered_by"] = args.filter
     t0 = time.time()
     done = cropped = no_anno = no_grid = failed = 0
     colors = {}
-    for rank, path in enumerate(files, 1):
-        name = os.path.basename(path)
-        sz = os.path.getsize(path)
-        rec = {"file": name, "size_bytes": sz, "size_kb": sz // 1024}
-        try:
-            status, info, grid = process_one(path)
-            rec.update(info)
-            rec["status"] = status
-            if status == "cropped":
-                d = os.path.join(out_root, f"{rank:03d}_{sz // 1024}KB_{os.path.splitext(name)[0]}")
-                os.makedirs(d, exist_ok=True)
-                img = cv2.imread(path)
-                rows, x0, x1 = grid["rows"], grid["x0"], grid["x1"]
-                filled = grid.get("filled")
-                row_half = rec.get("row_half", ROW_HALF)
-                strips = []
-                for i in rec["annotated_rows"]:
-                    y = int(rows[i])
-                    y0, y1 = max(0, y - row_half), min(img.shape[0], y + row_half)
-                    strips.append((i, img[y0:y1, x0:x1].copy()))
-                anno_stack = build_stack(strips, x1 - x0)
-                if anno_stack is not None:
-                    cv2.imwrite(os.path.join(d, "02_annotated.png"), anno_stack)
-                # 全行栈（对齐绿字路径 01_rows）：只取有内容行，越界行排除
-                if filled is None:
-                    filled = filled_rows(
-                        cv2.morphologyEx(
-                            COLOR_MASKS[rec["digit_color"]](*cv2.split(img)).astype(np.uint8),
-                            cv2.MORPH_OPEN, np.ones((3, 3), np.uint8)), rows, x0, x1)
-                filled_idx = [i for i in range(len(rows)) if i < len(filled) and filled[i]]
-                full_strips = [(i, img[max(0, int(rows[i]) - row_half):min(img.shape[0], int(rows[i]) + row_half), x0:x1].copy())
-                               for i in filled_idx]
-                full_stack = build_stack(full_strips, x1 - x0)
-                if full_stack is not None:
-                    cv2.imwrite(os.path.join(d, "01_rows.png"), full_stack)
-                # debug：原图画标注行框
-                dbg = img.copy()
-                for i in rec["annotated_rows"]:
-                    y = int(rows[i])
-                    cv2.rectangle(dbg, (x0, max(0, y - row_half)), (x1, min(img.shape[0], y + row_half)),
-                                  (255, 0, 0), 3)
-                    cv2.putText(dbg, f"row{i}", (x0 + 6, max(24, y - row_half + 28)),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 0, 0), 2)
-                cv2.imwrite(os.path.join(d, "03_debug.png"), dbg)
-                rec["crop_dir"] = os.path.relpath(d, out_root)
+    prog_every = max(1, min(25, len(files) // 10))   # 每 ~25 张打一次进度(小样本自适配)
+    rank_name = []
+    with ThreadPoolExecutor(max_workers=args.workers) as ex:
+        futs = {ex.submit(process_one_ranked, rank, path, out_root): (rank, path)
+                for rank, path in enumerate(files, 1)}
+        for fut in as_completed(futs):
+            rank, name, rec = fut.result()
+            rank_name.append((rank, name))
+            results["images"][name] = rec
+            st = rec.get("status")
+            if st == "cropped":
                 cropped += 1
-            elif status == "no-anno":
+            elif st == "no-anno":
                 no_anno += 1
-            elif status == "no-grid":
+            elif st == "no-grid":
                 no_grid += 1
             else:
                 failed += 1
-        except Exception as e:
-            rec["status"] = "error"
-            rec["error"] = str(e)[:200]
-            failed += 1
-        colors[rec.get("digit_color", "?")] = colors.get(rec.get("digit_color", "?"), 0) + 1
-        results["images"][name] = rec
-        done += 1
-        if done % 50 == 0:
-            results["_progress"] = {"done": done, "cropped": cropped, "no_anno": no_anno,
-                                    "no_grid": no_grid, "failed": failed,
-                                    "elapsed_s": round(time.time() - t0, 1)}
-            write_json(results, os.path.join(out_root, "crops_all_manifest.json"))
-        print(f"[crop_all] {done}/{len(files)} {name[:40]} {rec['size_kb']}KB "
-              f"字色{rec.get('digit_color', '?')} 行{rec.get('n_rows', '?')} "
-              f"标注{rec.get('n_annotated', '?')} -> {status}", flush=True)
+            colors[rec.get("digit_color", "?")] = colors.get(rec.get("digit_color", "?"), 0) + 1
+            done += 1
+            if done % prog_every == 0 or done == len(files):
+                el = time.time() - t0
+                print(f"[crop_all] 进度 {done}/{len(files)} ({el:.0f}s, "
+                      f"{done / el:.1f} 张/s) cropped={cropped} | "
+                      f"{name[:36]} {rec['size_kb']}KB 字色{rec.get('digit_color', '?')} "
+                      f"行{rec.get('n_rows', '?')} 标注{rec.get('n_annotated', '?')} -> {st}",
+                      flush=True)
+            if done % 50 == 0:
+                results["_progress"] = {"done": done, "cropped": cropped, "no_anno": no_anno,
+                                        "no_grid": no_grid, "failed": failed,
+                                        "elapsed_s": round(time.time() - t0, 1)}
+                write_json(results, os.path.join(out_root, "crops_all_manifest.json"))
 
+    # 按 rank 序重建 images(与串行版按尺寸排序的输出一致)
+    results["images"] = {n: results["images"][n] for _, n in sorted(rank_name)}
     results["_progress"] = {"done": done, "cropped": cropped, "no_anno": no_anno,
                             "no_grid": no_grid, "failed": failed,
                             "elapsed_s": round(time.time() - t0, 1)}
