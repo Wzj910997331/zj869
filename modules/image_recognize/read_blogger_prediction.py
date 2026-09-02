@@ -307,7 +307,8 @@ def main():
                     help="视觉模型：glm(默认 glm-5.3-flash，位准) 或 ds(deepseek-v4-flash-vision)")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--resume", action="store_true")
-    ap.add_argument("--cutoff", default="21:30")
+    ap.add_argument("--cutoff", default="21:30",
+                    help="复盘边界：'21:30'(同日只比时分) 或 '2026-08-31 21:30'(跨天目录比完整时间)")
     args = ap.parse_args()
 
     man = read_json(os.path.join(args.strips, "manifest.json"))
@@ -327,11 +328,15 @@ def main():
 
     recap = []
     if args.cutoff:
+        # 复盘边界：--cutoff 可给完整时间 "2026-08-31 21:30"(跨天目录必需，否则 09-01 复盘帖
+        # 的 00:xx<21:30 会漏剔) 或仅 "21:30"(同日目录，向后兼容只比时分)。
+        full_cut = "-" in args.cutoff
         keep, rec = [], []
         for f, v in all_items:
             t = posttime(f)
-            if t and t[11:16] >= args.cutoff:
-                v["reason"] = f"开奖后发帖(复盘/下期，{t[11:16]})；不读"
+            is_recap = bool(t) and (t >= args.cutoff if full_cut else t[11:16] >= args.cutoff)
+            if is_recap:
+                v["reason"] = f"开奖后发帖(复盘/下期，{t[:16]})；不读"
                 rec.append((f, v))
             else:
                 keep.append((f, v))
