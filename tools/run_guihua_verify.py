@@ -268,8 +268,9 @@ def upper_bound_chains(lottery, period, window=10):
     return ch
 
 
-def robust_scan(verdict, lottery, period):
-    """对 coincidence/ds-fail 判定做上界稳健性: 上界链能否推出命中预测。"""
+def robust_scan(verdict, lottery, period, verdict_path=None):
+    """对 coincidence/ds-fail 判定做上界稳健性: 上界链能否推出命中预测。
+    结果写回 verdict['images'][*]['robust'] 并落盘，供 finalize 文档引用。"""
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
     import reproduce_guihua as rp
     notes = []
@@ -285,10 +286,15 @@ def robust_scan(verdict, lottery, period):
         derivable = [(h["position"], h["digit"]) for h in iv.get("predictions", [])
                      if (norm_pos(h["position"]), h["digit"]) in cands]
         if derivable:
-            notes.append(f"{iv.get('blogger')}: ⚠️ 上界变体可推出 {derivable} → "
-                         "coincidence 与链完整度相关，需人工复核博主是否画了这些节点")
+            iv["robust"] = (f"⚠️ 上界变体可推出 {derivable} → "
+                            "coincidence 与链完整度相关，需人工复核博主是否画了这些节点")
+            notes.append(f"{iv.get('blogger')}: {iv['robust']}")
         else:
-            notes.append(f"{iv.get('blogger')}: coincidence 稳健(上界整列全画仍推不出命中预测)")
+            iv["robust"] = "coincidence 稳健(上界整列全画仍推不出命中预测)"
+            notes.append(f"{iv.get('blogger')}: {iv['robust']}")
+    if verdict_path:
+        json.dump(verdict, open(verdict_path, "w", encoding="utf-8"),
+                  ensure_ascii=False, indent=1)
     return notes
 
 
@@ -329,7 +335,8 @@ def main():
     if verdict is None:
         print("⑦ 未产出 verdict json"); return
     if not args.no_robust:
-        notes = robust_scan(verdict, lottery, args.period)
+        verdict_path = os.path.splitext(repro_json)[0] + ".verdict.json"
+        notes = robust_scan(verdict, lottery, args.period, verdict_path)
         if notes:
             print("== 稳健性(上界变体敏感性, 防链条读不全误判巧合) ==")
             for n in notes:
