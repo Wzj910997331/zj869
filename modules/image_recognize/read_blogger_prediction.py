@@ -260,11 +260,20 @@ def one_batch(batch, api_ctx):
         for f in files:
             out[f]["error"] = f"{model} 输出非 JSON 数组"
         return out
-    # 按标签匹配
+    # 按标签匹配：兼容「元素为 dict(带 idx)」与「元素为预测数组(DS 不带 idx，按 montage 上下顺序对齐)」
+    labels_seq = [l.lstrip("#") for l, _, _, _, _ in batch]
     got = {}
-    for item in arr:
-        lab = str(item.get("idx", "")).strip().lstrip("#")
-        got[lab] = item
+    if all(isinstance(x, dict) for x in arr):
+        for item in arr:
+            lab = str(item.get("idx", "")).strip().lstrip("#")
+            got[lab] = item
+    else:
+        for lab, item in zip(labels_seq, arr):
+            if isinstance(item, dict):
+                got[lab] = item
+            elif isinstance(item, list):
+                pred_lst = [p for p in item if isinstance(p, dict)]
+                got[lab] = {"idx": lab, "预测": pred_lst}
     for label, file, meta, strip_type, blogger in batch:
         lab = label.lstrip("#")
         item = got.get(lab)
@@ -378,7 +387,13 @@ def main():
     todo = [b for b in todo if b]
 
     def task(labels):
-        return one_batch(labels, api_ctx)
+        """单批读图：任何异常转成该批每条的 error 记录，绝不拖垮整个任务。"""
+        try:
+            return one_batch(labels, api_ctx)
+        except Exception as e:
+            print(f"  [batch异常] {e}")
+            return {f: {"file": f, "error": f"batch异常: {e}"}
+                    for lab, f, v, st, b in labels}
 
     n_done = 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as ex:
