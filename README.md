@@ -3,7 +3,7 @@
 > 从 gouli99 论坛抓取博主手画的"排列五走势图"，用**视觉模型**识别画规（圈选/连线/框选/杀号），
 > 通过**真实开奖校准**核验命中，沉淀为**画规方法库**（目标 1000 条），为后续每期预测/回测提供方法依据。
 >
-> 现状一句话：**流程已改造为四步管线「爬取 → 确定性过滤 → 裁剪 → resize → 视觉判定」，20260831 期（26233）583 张图跑通：过滤 keep 134 / uncertain 285 / exclude 164，冒烟 2 张全部 ds-ok（A–G 对齐门全过、匹配 6/11 期、命中与规律已输出）。旧五阶段管线（26230–26232）成果保留：26231/26232 采集 957 条 → 命中 100 条（7.41%/12.68%），26230 命中 18 条（2.59%），画规方法库 48 条已生成。**
+> 现状一句话：**流程已改造为六步管线「爬取 → 确定性过滤 → 裁剪 → resize → 视觉判定 → 二次验证」，20260831 期（26233）583 张图跑通：过滤 keep 134 / uncertain 285 / exclude 164，冒烟 2 张全部 ds-ok（A–G 对齐门全过、匹配 6/11 期、命中与规律已输出）；二次验证（verify_patterns，四维独立核验）24 机器候选 + 14 博主标注 → verified 4 / candidate 4 / no_hit 27 / unverified 3，事实失败 0、hit 不一致 0、含本期行自证 0。旧五阶段管线（26230–26232）成果保留：26231/26232 采集 957 条 → 命中 100 条（7.41%/12.68%），26230 命中 18 条（2.59%），画规方法库 48 条已生成。**
 
 ---
 
@@ -28,7 +28,7 @@
 
 ---
 
-## 0. 现行全流程（四步管线，2026-08-31 起，从爬取到输出规律）
+## 0. 现行全流程（六步管线，2026-08-31 起，从爬取到二次验证输出规律）
 
 改造目标：爬完一期数据后不再把每张原图都喂慢速视觉模型，先用**确定性 OpenCV+OCR** 过滤掉
 "没在近期待开奖历史上画规律"的图，再把真正画了规的图交给视觉模型做**对已开奖回溯判定**。
@@ -60,6 +60,14 @@
         │   ds 读数字/标注 → A–G 确定性对齐门 → 确定性交叉命中校验 → 抽规律
         │   → data/recognize/20260831_all/analysis/judge_20260831.json
         │     + data/crawl/20260831/predictions_with_blogger.json（规律输出，博主归属 join posts.json）
+        ▼
+⑥ 二次验证（新，2026-09-02）
+   modules/image_recognize/verify_patterns.py
+        │   四维独立核验：①命中独立复核（权威 draw 重算）②无未来函数（剔除本期行 oos 重抽）
+        │   ③结构事实核对（重建 anno_pos 重跑 extract_candidates 按序比对）④博主标注归属（anno_hit/anno_linked/machine）
+        │   verdict: invalid | unverified | self_referential | no_hit | verified | candidate
+        │   → data/recognize/20260831_all/analysis/pattern_verify_20260831.json + .md（独立验证报告）
+        │     + data/crawl/20260831/predictions_with_blogger.json（重新生成，每条挂 verify 字段）
 ```
 
 ### 命令链（20260831 实测）
@@ -93,6 +101,15 @@ docker exec zhenjie sh -c 'cd /data/zhenjie/zj869 && .venv/bin/python tools/craw
     --lottery data/crawl/20260831/lottery_recent.json \
     --posts data/crawl/20260831/posts.json \
     --src-dir data/crawl/20260831/images
+
+# ⑥ 二次验证（四维独立核验 + 写回 verify 到规律产物；幂等可重跑）
+/usr/bin/python3 modules/image_recognize/verify_patterns.py \
+    --date 20260831 \
+    --judge data/recognize/20260831_all/analysis/judge_20260831.json \
+    --lottery data/crawl/20260831/lottery_recent.json \
+    --predictions data/crawl/20260831/predictions_with_blogger.json \
+    --target-period 26233 --draw "1 6 3 4 0" \
+    --posts data/crawl/20260831/posts.json
 ```
 
 ### 过滤决策矩阵（filter_trend.py v3，全部确定性）
@@ -122,6 +139,18 @@ v3 修复的两处误杀根因：① **ring（圈选）计入有效标注**（�
 判定口径 = **对已开奖回溯判定**：模型读博主标注位置+数字，A–G 门保证行→期映射可靠后，
 确定性逐位算 hit，与模型 verdict 交叉核对（不一致则 glm 兜底）。**杀号/报号/铁率/不定位不计入命中。**
 
+**二次验证**（verify_patterns，第⑥步）：对规律产物做四维独立核验——① 命中用权威 draw 重算；
+② 无未来函数 = 检查推导输入行范围 + 剔除本期行(oos)后重抽 extract_candidates 判候选是否仍存活；
+③ 结构事实 = 用 annotations 重建 anno_pos 重跑规则引擎，与 judge patterns 按序比对；
+④ 博主标注归属 = 区分 anno_hit（该位标注且命中）/ anno_linked / machine / na。
+verdict 五档+1：invalid（完整性故障，需修）/ unverified（标注行无权威映射无法背书）/
+self_referential（含本期行自证，剔除预测口径）/ no_hit（正常未中）/ verified（博主真画+命中）/
+candidate（命中但纯机器候选，参考价值低）。
+26233 冒烟 2 图实测：24 机器候选 + 14 博主标注 → verified 4 / candidate 4 / no_hit 27 / unverified 3，
+fact 失败 0、hit 不一致 0、draw 与权威一致、含本期行自证 0。**含本期行回归**：旧 analyze 195 张 ds-ok 中
+55 张含本期行（博主"开奖后更新"型走势图），全部正确判 self_referential 而非 verified；652 条机器候选推导
+时读到了本期行，其中 117 条剔除本期行(oos)后从候选集消失 → 自证，535 条历史数据独立也能推出 → 非自证。
+
 ### 关键设计（踩坑沉淀）
 
 - **anti-loop 提示词**：网关"始终思考"型模型对开放式规律分析死循环；判定 prompt 一律"只读数字、
@@ -132,10 +161,13 @@ v3 修复的两处误杀根因：① **ring（圈选）计入有效标注**（�
 - **resize 夹逼**：过大下采样到 ≤1024×2200，过小（640 栈图）上采样到 ≥1024 宽，统一 JPEG q90。
 - **零污染约束**：filter/resize/judge 只写新文件；`image_patterns_with_blogger.json`（2145 条旧流程产物）、
   `crops_all_manifest.json`、`exclude_list.json` 哈希校验不变；20260829/30 目录不动。
+  **二次验证（第⑥步）** 只写 `predictions_with_blogger.json`（本就是新产物，重生成时每条挂 verify 字段，
+  幂等不重复追加）+ 新增 `analysis/pattern_verify_<date>.json/md`；`judge_<date>.json` 只读不写。
+  旧校验器 `verify_patterns_26233.py` / `out_of_sample_hit_26233.py`（服务旧五阶段流程）保留不删。
 
 ---
 
-## 1. 历史管线（五阶段，26230–26232 期使用，已被四步管线取代）
+## 1. 历史管线（五阶段，26230–26232 期使用，已被六步管线取代）
 
 ```
 ① 历史开奖采集          500彩票网 plw 接口（gb2312，UA+Referer）
@@ -195,11 +227,12 @@ v3 修复的两处误杀根因：① **ring（圈选）计入有效标注**（�
 
 ## 4. 目录结构```
 zj869/
-├── modules/image_recognize/     # 四步管线（现行，2026-08-31 起）
+├── modules/image_recognize/     # 六步管线（现行，2026-08-31 起）
 │   ├── filter_trend.py          # ② 确定性过滤（OpenCV+OCR，无 LLM）→ filter_report.json
 │   ├── crop_all.py              # ③ 裁剪（复用；仅 status==cropped 进识别）
 │   ├── resize_crops.py          # ④ 显式 resize（640→≥1024 宽）→ vision/*.jpg
 │   ├── judge_accuracy.py        # ⑤ 视觉判定+规律 → judge_<date>.json + predictions_with_blogger.json
+│   ├── verify_patterns.py       # ⑥ 二次验证（四维核验+verdict）→ pattern_verify_<date>.json/md + 重生成 predictions 带 verify
 │   └── cv_trend_reader/         # 底层原语（行带/列定位/标注形态/期号OCR/开奖匹配）
 ├── agents/                    # 原始多Agent框架（collector 已接真实数据）
 ├── tools/                     # 数据/验证/方法库工具（主战场）
