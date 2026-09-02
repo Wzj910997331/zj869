@@ -5,7 +5,7 @@
 连同采集条数/命中率，写成 docs/规律/{period}.json + {period}.md。
 每期一个文件，规律累计可查。
 用法: python tools/export_rules.py --base 20260829 --period 26231 --draw "1 8 7 9 9" --calib 26230 --calib-draw "9 4 6 8 3"
-      [--cutoff 21:25]  开奖前发帖过滤（排列5 每日 21:25 开奖；开奖后发帖=复盘/下期预测，剔除；空串禁用）
+      [--cutoff 21:30]  开奖前发帖过滤（排列5 每日 21:30 开奖；开奖后发帖=复盘/下期预测，剔除；空串禁用）
       [--require-verified]  命中必须经独立二次识读复核；仅单源视觉读数（未复核）的命中候选一律计入剔除清单
       （26231/26232 命中归零即由此参数导出：单源读数同图可解释为任意数字，按口径不计命中）
 """
@@ -55,11 +55,11 @@ def real_hit(r, actual):
 
 
 def valid_post_factory(base_dir, cutoff):
-    """开奖前发帖过滤：博主在本期开奖(21:25)后才发的图属"复盘/下期预测"，
+    """开奖前发帖过滤：博主在本期开奖(21:30)后才发的图属"复盘/下期预测"，
     图里已含本期开奖结果（博主圈的是已知号码），不能算本期预测。
 
     posts.json 中每帖带 create_time；图片名 s_2_<post_id>_<n>.jpg 直接对回帖 id。
-    cutoff 如 '21:25'：保留发帖时间严格早于该时刻的记录。
+    cutoff 如 '21:30'：保留发帖时间严格早于该时刻的记录。
     返回 valid(r)；posts.json 缺失 → 不过滤（老期）；记录对不上帖 → 保守剔除。
     """
     if not os.path.exists(os.path.join(base_dir, "posts.json")):
@@ -112,8 +112,8 @@ def main():
     ap.add_argument("--draw", required=True, help="本期开奖，如 '1 8 7 9 9'")
     ap.add_argument("--calib", default="", help="校准期号，如 26230")
     ap.add_argument("--calib-draw", default="", help="校准期开奖，如 '9 4 6 8 3'")
-    ap.add_argument("--cutoff", default="21:25",
-                    help="本期开奖前发帖截止时刻 HH:MM（排列5 每日 21:25 开奖；"
+    ap.add_argument("--cutoff", default="21:30",
+                    help="本期开奖前发帖截止时刻 HH:MM（排列5 每日 21:30 开奖；"
                          "发帖晚于此属复盘/下期预测，剔除）。传空串禁用")
     ap.add_argument("--require-verified", action="store_true",
                     help="命中必须经独立二次识读复核（GLM 多位置重读/人工）。开启后，"

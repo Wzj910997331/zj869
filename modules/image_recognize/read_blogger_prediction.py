@@ -298,7 +298,7 @@ def main():
                     help="视觉模型：glm(默认 glm-5.3-flash，位准) 或 ds(deepseek-v4-flash-vision)")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--resume", action="store_true")
-    ap.add_argument("--cutoff", default="21:25")
+    ap.add_argument("--cutoff", default="21:30")
     args = ap.parse_args()
 
     man = read_json(os.path.join(args.strips, "manifest.json"))
