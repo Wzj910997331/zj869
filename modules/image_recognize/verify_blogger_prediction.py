@@ -52,10 +52,19 @@ def norm_candidates(cand):
     return out
 
 
-def classify_positions(rec, draw):
+def classify_positions(rec, draw, overrides=None):
     """对一条预测记录展开逐位置分类。返回 (records, image_excluded, image_reason)。
 
-    records: [{位置,候选,pnums,pos,actual,cls,单押,标注方式,原文}, ...]
+    位置来源（绝不盲信 GLM 读数里自带的位置名，那是循环校验——模型说"百位"就查百位）：
+      position_source:
+        calib-anchor  位置名经校准行(前一期已知开奖如 26230=9 4 6 8 3)锚定/校正（确定性，模型无关）
+        glm-read      未校准，沿用 GLM 读出的位置名（风险：期号/和值列污染导致偏移）
+
+    overrides: {file: {glm_name: ({name, source} | str)}}
+      由已验证的校准行锚定结果给出：把 GLM 读错的位置名改成校准行确认的位置名。
+      例 富老师_2：GLM 读"百位"实为"千位" → {'百位': {'name':'千位','source':'calib-anchor'}}。
+
+    records: [{位置,候选,pnums,pos,actual,cls,单押,标注方式,原文,position_source}, ...]
       其中 cls ∈ hit/miss/wide/noloc；img_excluded 时会话外。
     """
     reject = rec.get("reject_reason")
@@ -68,10 +77,21 @@ def classify_positions(rec, draw):
     if not preds:
         return [], True, "未读出博主目标期行预测（无 predicted_positions）"
 
+    file = rec.get("file")
+    file_ovr = (overrides or {}).get(file, {})
+
     records = []
     hit = 0
     for p in preds:
         posname = p.get("位置", "")
+        pos_source = "glm-read"
+        ovr = file_ovr.get(posname)
+        if isinstance(ovr, dict):
+            posname = ovr.get("name", posname)
+            pos_source = ovr.get("source", "calib-anchor")
+        elif isinstance(ovr, str):
+            posname = ovr
+            pos_source = "calib-anchor"
         pos = parse_position(posname)
         pnums = norm_candidates(p.get("候选"))
         actual = draw[pos] if (pos is not None and 0 <= pos < len(draw)) else None
@@ -94,7 +114,8 @@ def classify_positions(rec, draw):
             single = False
         records.append({"位置": posname, "候选": p.get("候选") or [], "pnums": pnums,
                         "pos": pos, "实际": actual, "cls": cls, "单押": single,
-                        "标注方式": p.get("标注方式", ""), "原文": p.get("原文", "")})
+                        "标注方式": p.get("标注方式", ""), "原文": p.get("原文", ""),
+                        "position_source": pos_source})
     return records, False, None
 
 
@@ -104,12 +125,18 @@ def main():
     ap.add_argument("--period", required=True)
     ap.add_argument("--draw", required=True)
     ap.add_argument("--pred", required=True, help="blogger_predictions.json")
+    ap.add_argument("--position-overrides", default=None,
+                    help="校准行锚定的位置覆盖 JSON：{file:{glm位置名:{name,source}|str}}——"
+                         "把 GLM 读错的位置名改成校准行(如 26230=9 4 6 8 3)确认的位置名")
     ap.add_argument("--out", default=None, help="输出 blogger_predictions_verify.json")
     args = ap.parse_args()
 
     draw = [int(x) for x in args.draw.split()]
     src = read_json(args.pred)
     preds = src.get("predictions", [])
+    overrides = None
+    if args.position_overrides and os.path.exists(args.position_overrides):
+        overrides = read_json(args.position_overrides)
 
     images = {}
     n_hit = n_collect = n_single = n_excluded = 0
@@ -117,7 +144,7 @@ def main():
 
     for rec in preds:
         file = rec["file"]
-        records, img_excl, reason = classify_positions(rec, draw)
+        records, img_excl, reason = classify_positions(rec, draw, overrides)
         has_hit = any(r["cls"] == "hit" for r in records)
         if img_excl:
             images[file] = {"file": file, "blogger": rec.get("blogger"),
@@ -164,6 +191,9 @@ def main():
            "分类口径": {
                "hit": "单押1码+位对+数字对", "miss": "单押1码但位没对/数字没对上",
                "excluded": "多码宽网(≥2码/和值)/不定位/报号(图级 reject_reason)/缺图/API失败",
+               "position_source": "位置名来源（绝不盲信 GLM 自报位置名——那是循环校验）："
+                                  "calib-anchor=经校准行(前一期已知开奖)锚定/校正，确定性命中；"
+                                  "glm-read=沿用 GLM 位置名，未校准",
                "单码采集": "仅 单押1码且能定位 的预测位置(hit+miss)；多码/和值(C)、不定位、空(B) 不计入分母"},
            "统计": stats,
            "images": images}
