@@ -1,0 +1,154 @@
+{
+ "period": "26235",
+ "draw": "7 7 9 6 7",
+ "total_records": 33,
+ "hit_records": 1,
+ "hit_rate": 0.0303,
+ "full_hits": 1,
+ "rejected": [
+  {
+   "blogger": "娱乐规 808",
+   "reason": "多码宽网(≥2 候选)：候选池式，推不出本期唯一结果（万位 候选[2, 7] 实际7）"
+  },
+  {
+   "blogger": "用户_483317808",
+   "reason": "多码宽网(≥2 候选)：候选池式，推不出本期唯一结果（万位 候选[3, 8] 实际7）"
+  },
+  {
+   "blogger": "5557，，",
+   "reason": "多码宽网(≥2 候选)：候选池式，推不出本期唯一结果（万位 候选[2, 7] 实际7）"
+  },
+  {
+   "blogger": "离合",
+   "reason": "多码宽网(≥2 候选)：候选池式，推不出本期唯一结果（千位 候选[4, 9] 实际7）"
+  },
+  {
+   "blogger": "小目标ww",
+   "reason": "多码宽网(≥2 候选)：候选池式，推不出本期唯一结果（万位 候选[1, 6] 实际7）"
+  },
+  {
+   "blogger": "1669",
+   "reason": "多码宽网(≥2 候选)：候选池式，推不出本期唯一结果（万位 候选[3, 8] 实际7）"
+  },
+  {
+   "blogger": "陈靖可Chan",
+   "reason": "读图/api 失败：auto(glm→ds均失败) 空返回"
+  },
+  {
+   "blogger": "钱多多💰❤️",
+   "reason": "读图/api 失败：auto(glm→ds均失败) 空返回"
+  },
+  {
+   "blogger": "486979850",
+   "reason": "读图/api 失败：auto(glm→ds均失败) 空返回"
+  },
+  {
+   "blogger": "还没有名字0-487112664",
+   "reason": "读图/api 失败：auto(glm→ds均失败) 空返回"
+  },
+  {
+   "blogger": "花好夜园",
+   "reason": "读图/api 失败：auto(glm→ds均失败) 空返回"
+  },
+  {
+   "blogger": "辉拓数据",
+   "reason": "读图/api 失败：auto(glm) 输出非 JSON 数组"
+  },
+  {
+   "blogger": "发发发啊啊啊",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "五行秘法",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "小钉子2688335",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "9394948",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "风的季节2502711",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "用户_485110591",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "尚亿园",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "一規至尊",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "胖妞。",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "好困鸭",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "无中生有ABC",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "难得糊涂_483396764",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "熊大出品",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "天空的流星2626939",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "好0",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "夜无痕",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "情有独钟0",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "李少预测",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "飞马_2268440",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "不用关注",
+   "reason": "读图/api 失败：auto(glm) 输出非 JSON 数组"
+  }
+ ],
+ "rules": [],
+ "rule_count": 0,
+ "hit_no_rule": [
+  {
+   "blogger": "消磨时间",
+   "image": "s_2_f4320c3b-8546-4fba-a38c-b7859222d71c_0.jpg",
+   "hit": "万位=7 → 26235 万位=7 ✓ （万7✓实7；十9✗实6）",
+   "drawn_chain": "博主从26225期百位1开始，向右下斜连到26226期百位0，再斜连到26227期百位1；同时用红斜线从26227期百位1连到26230期百位0（或26230期百位6），并框选26227期个位9、26231期个位9；再用蓝线把两个个位9连起来；之后又从26233期百位3斜连到26234期百位1，并框选26235期个位9。",
+   "logic": "博主画的链条：博主从26225期百位1开始，向右下斜连到26226期百位0，再斜连到26227期百位1；同时用红斜线从26227期百位1连到26230期百位0（或26230期百位6），并框选26227期个位9、26231期个位9；再用蓝线把两个个位9连起来；之后又从26233期百位3斜连到26234期百位1，并框选26235期个位9。。固定规律库对命中「万位=7」推不出（预测万7: 规律库无法推出(无逻辑自洽，疑似巧合)）→ 判**coincidence（巧合命中）**，命中保留但**不列规律**。\n稳健性：coincidence 稳健(上界整列全画仍推不出命中预测)",
+   "verdict": "coincidence"
+  }
+ ],
+ "hit_no_rule_count": 1,
+ "miss_records": [],
+ "miss_no_rule_count": 0,
+ "说明": "口径：命中=博主写在目标期行(26235)的手写单押数字与实开一致；复盘帖(≥21:30)剔除。命中总数 1 条是**事实**。但【画规规律】须由固定规律库(repeat/swap/slant)从博主亲手画的节点推出；⑥ DS盲读 → ⑦ 自证复现：可复现且中 0 / 巧合命中(无逻辑,不列规律) 1；全部 coincidence 经上界变体敏感性扫描稳健（上界整列全画仍推不出命中预测）。本文档 rule_count=0（只计可复现规律）。"
+}

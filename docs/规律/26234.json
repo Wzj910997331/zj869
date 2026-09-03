@@ -1,0 +1,98 @@
+{
+ "period": "26234",
+ "draw": "3 0 1 2 9",
+ "total_records": 28,
+ "hit_records": 1,
+ "hit_rate": 0.0357,
+ "full_hits": 1,
+ "rejected": [
+  {
+   "blogger": "飞马_2268440",
+   "reason": "多码宽网(≥2 候选)：候选池式，推不出本期唯一结果（百位 候选[0, 5] 实际1）"
+  },
+  {
+   "blogger": "还没有名字0-487112664",
+   "reason": "多码宽网(≥2 候选)：候选池式，推不出本期唯一结果（万位 候选[4, 9] 实际3）"
+  },
+  {
+   "blogger": "5557，，",
+   "reason": "多码宽网(≥2 候选)：候选池式，推不出本期唯一结果（千位 候选[0, 5] 实际0）"
+  },
+  {
+   "blogger": "五行秘法",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "伍佰万～☔️～",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "用户_485110591",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "关心❤️",
+   "reason": "报号/无画规：和值/组选/胆(非定位单码)：和值5"
+  },
+  {
+   "blogger": "_逆境崛起_2316181",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "小目标ww",
+   "reason": "报号/无画规：和值/组选/胆(非定位单码)：和值4"
+  },
+  {
+   "blogger": "闲人_石头_3360052",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "________1958401",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "一七八",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "486114791",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "突如钱来",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "信可乐也",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "胖妞。",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "用规说话",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  },
+  {
+   "blogger": "486628109",
+   "reason": "未读出博主目标期行预测（无 predicted_positions）"
+  }
+ ],
+ "rules": [],
+ "rule_count": 0,
+ "hit_no_rule": [
+  {
+   "blogger": "全面计划1559204",
+   "image": "s_2_91b1834e-14b5-48e8-9332-e320ad9167c4_0.jpg",
+   "hit": "十位=2 → 26234 十位=2 ✓ （十2✓实2）",
+   "drawn_chain": "博主从26231期万位数字1开始，用紫色连线依次连圈26232期万位0、26233期百位3、26233期十位4，最终圈到26234期个位2。",
+   "logic": "博主画的链条：博主从26231期万位数字1开始，用紫色连线依次连圈26232期万位0、26233期百位3、26233期十位4，最终圈到26234期个位2。。固定规律库对命中「十位=2」推不出（预测十2: 规律库无法推出(无逻辑自洽，疑似巧合)）→ 判**coincidence（巧合命中）**，命中保留但**不列规律**。\n稳健性：coincidence 稳健(上界整列全画仍推不出命中预测)",
+   "verdict": "coincidence"
+  }
+ ],
+ "hit_no_rule_count": 1,
+ "miss_records": [],
+ "miss_no_rule_count": 0,
+ "说明": "口径：命中=博主写在目标期行(26234)的手写单押数字与实开一致；复盘帖(≥21:30)剔除。命中总数 1 条是**事实**。但【画规规律】须由固定规律库(repeat/swap/slant)从博主亲手画的节点推出；⑥ DS盲读 → ⑦ 自证复现：可复现且中 0 / 巧合命中(无逻辑,不列规律) 1；全部 coincidence 经上界变体敏感性扫描稳健（上界整列全画仍推不出命中预测）。本文档 rule_count=0（只计可复现规律）。"
+}
