@@ -37,14 +37,17 @@ class DigitCNN(nn.Module):
         return self.head(self.features(x))
 
 
-def load_model(device="cpu"):
-    if not os.path.exists(MODEL_PATH):
+def load_model(device="cpu", path=None):
+    """加载权重。path 默认 MODEL_PATH(digit_cnn.pt)；传入其它 .pt 可复用本架构(如 hand_cnn)。"""
+    if path is None:
+        path = MODEL_PATH
+    if not os.path.exists(path):
         return None
     model = DigitCNN()
     try:
-        model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+        model.load_state_dict(torch.load(path, map_location=device))
     except Exception as e:
-        print(f"[digit_cnn] 模型加载失败: {e}")
+        print(f"[digit_cnn] 模型加载失败({os.path.basename(path)}): {e}")
         return None
     model.to(device)
     model.eval()
