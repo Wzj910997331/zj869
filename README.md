@@ -66,6 +66,30 @@
    tools/export_blogger_prediction.py   → 采集 80 / 命中 4 (5.00%) / 规律 4 / 剔除 23
 ```
 
+**①b 博主单押「上一期+目标期」双格带裁剪：格线锚定（`col_band_crop.py`，2026-09-03 定稿）**
+
+> 状态：**裁剪几何已人眼复核定稿**（26231 对照集 9 案例全部重画+复核，30 条 cols 冒烟全绿）；**尚未并入 ① 一键读链**——待「稳健列重锚 + CV 读/DS 兜底」接线后替换 `extract_prediction_strip.py` 的 cols 裁剪。此模块只裁不读（确定性，零视觉）。
+
+**为什么换掉旧几何（根因，idx56 实测）**：旧法 `band_top = ty − 1.5·row_pitch` 隐含假设 filter 报的目标行 `target_y(ty)` 是目标格**中心**。但部分图 ty 偏到目标格**底部**（idx56：ty=1641，真实目标格=[1560,1664]、中心≈1612，偏 +30px）→ `ty−1.5p=1486` 直接切进上一期 26230 的格子 [1458,1560] → **上期开奖行 9 4 6 8 3 顶部被裁**。教训：**ty 不可信为格中心，横向细格线才是竖向唯一可信几何**——格线定格、格内装打印行。
+
+**怎么做（思路）**
+1. **找格线**（`detect_gridlines`）：多阈值 (195,210,225,238,248) 并集找**细横向格线**——行内最长连续暗 run ≥ 0.85×表宽，连续暗行按带厚 ≤6px 才算线。阈值拉宽 = 同时覆盖 idx59（格线灰 <200）与 idx56（格线偏浅需 ~215）；细带判据 = 剔除博主满高彩色底纹/内容厚带（阈值法一档拉不过去）。
+2. **定两整格**（`resolve_band_rows`）：`g` = 比 ty 小的最大格线 = **目标格顶** = 上一期/目标两行分界；`band_top` = 最接近 `g−pitch` 但须 `< g−0.6·pitch` 的格线 = **上一期格顶**（最近邻+下限切法 = 自动跳过孪生双线 idx62 1704/1710、中继线 idx22 1503）；`cell_bot` = 最接近 `g+pitch` 的格线 = 目标格底。两整格 = `[band_top, cell_bot]`；无格线才回退旧公式并标 `method=pitch-fallback`（几何不可信，进 pipeline 需人眼复核）。
+3. **博主标记只认目标格内**：扫描区 `[g, cell_bot+0.9p]`（放大看大数字底边越格）但丢弃**起点已越过格底**的色块（= 下邻打印行的彩色开奖字，idx56 大数字下溢假象）；**整区高水印/色带**（触区顶与底，idx59 半透明底）剔除；条底 `band_bot = max(ty+0.5p, cell_bot, 标记底+14)` —— 色带不撑条、真标记才撑。
+4. **逐位自适应窗口**（`pick_per_position`+`adaptive_tile`）：列锚 `cols` 可锚时按 5 列中线切列窗，窗内挑**垂直中心最贴目标格中心**的标记，裁 = 标记 bbox 放大 25% 边距 → 再放大到目标高 ~120px。预测值大数字（可近整格高，idx05）不再裁缺。`cols_ok=False`（idx5/62 等列锚坏/比例尺错）整条**转 DS**（不裁伪位）。
+5. **自检字段**：每图报 `prev_dark_span`（上一期格内打印墨垂直范围）+ `prev_top_margin`（内容顶距条顶）——顶贴条顶或整格无墨 = 该格选错，靠 `--anno` 图人眼复核。纯报告不 gate。
+
+**用法**
+```bash
+python3 modules/image_recognize/col_band_crop.py \
+    --date 20260829 \
+    --images data/crawl/20260829/images \
+    --manifest data/crawl/20260829/strips/manifest.json \  # 含 cols/target_y
+    --filter data/crawl/20260829/filter_report.json \       # 含 row_pitch
+    --out data/crawl/20260829/colcrop [--files f1,f2] [--limit N] [--anno]
+```
+产物：`<stem>_band.png`（3× 干净双行带，无参考线，供下游送读）+ `--anno` 时 `<stem>_band_anno.png`（绿=上期格顶/红=上期-目标分界，人眼复核）+ `<stem>_<万..个>.png`（目标格逐位标记自适应窗口）+ `crop_report.json`（每图格线/两整格/标记数/列可锚性/位置 bbox/上一期墨自检）。
+
 ## 0. 现行全流程（六步管线，2026-08-31 起，从爬取到画规自证复现输出规律）
 
 改造目标：爬完一期数据后不再把每张原图都喂慢速视觉模型，先用**确定性 OpenCV+CNN+OCR** 过滤掉
@@ -406,6 +430,7 @@ zj869/
 │   ├── judge_accuracy.py        # ④ 视觉判定+命中 → judge_<date>.json + 命中图集
 │   ├── read_guihua.py           # ⑤a 读整张命中原图画规 → guihua_<period>_reads.json
 │   ├── verify_patterns.py       # （旧）机器候选核验，已降级进④自检，保留不删
+│   ├── col_band_crop.py         # ①b 博主单押「上期+目标期」双格带裁剪（格线锚定，2026-09-03 定稿，待接线）
 │   └── cv_trend_reader/         # 底层原语（行带/列定位/标注形态/期号OCR/开奖匹配）
 ├── agents/                    # 原始多Agent框架（collector 已接真实数据）
 ├── tools/                     # 数据/验证/方法库工具（主战场）
