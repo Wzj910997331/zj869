@@ -90,6 +90,13 @@ def classify_positions(rec, draw, overrides=None, trust_glm_read=False):
     if not preds:
         return [], True, "未读出博主目标期行预测（无 predicted_positions）"
 
+    # 改动 B·5位完整性结构门：博主画满 5 位（full_width>=5，确定性彩色掩码测出）时，
+    # 要求读数 5 位齐全；读成 4 位（漏万位/截断）→ 直接判"读数不可靠"，不记 hit。
+    # 半截读在列位偏移下最容易错挂位名产生假命中，先在此拦下。
+    full_width = rec.get("full_width")
+    if isinstance(full_width, int) and full_width >= 5 and len(preds) < 5:
+        return [], True, f"full_width={full_width}(画满5位) 但只读到 {len(preds)} 位，读数不可靠(漏读/截断)"
+
     file = rec.get("file")
     file_ovr = (overrides or {}).get(file, {})
 

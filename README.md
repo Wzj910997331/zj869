@@ -3,7 +3,7 @@
 > 从 gouli99 论坛抓取博主手画的"排列五走势图"，用**视觉模型**识别画规（圈选/连线/框选/杀号），
 > 通过**真实开奖校准**核验命中，沉淀为**画规方法库**（目标 1000 条），为后续每期预测/回测提供方法依据。
 >
-> 现状一句话：**流程已改造为六步管线「爬取 → 确定性过滤 → 裁剪 → resize → 视觉判定 → 画规自证复现」，20260831 期（26233）583 张图跑通：过滤 keep 134 / uncertain 285 / exclude 164，冒烟 2 张全部 ds-ok（A–G 对齐门全过、匹配 6/11 期、命中已判定）；命中图进画规自证复现（读整张原图画规 + 值保真/逻辑自洽：26231 试点已跑通，26233–26235 已全量⑥⑦判定定稿，见 0a 表）。旧五阶段管线（26230–26232）成果：26231/26232 采集 831 条、**命中 0（单源视觉读数未独立复核，按口径全部剔除）**；26230 采集 694 条、**命中 6 条（单押口径，仅单码必中计命中）**，画规方法库 48 条已生成。**
+> 现状一句话：**流程已改造为六步管线「爬取 → 确定性过滤 → 裁剪+resize → 视觉判定 → 画规自证复现 → 更新文档+提交」**，20260831 期（26233）583 张图跑通。确定性过滤已升级 **v5（A 路结构判走势图 + B 路期号格放大锚目标期行）**：全量审计 **keep 184** / 目标期行未定位 302（242 为旧图超窗垃圾） / no-chart 80 / no-anno 17（产物暂存 /tmp/full_v5，未 promote，详见 §0.2-②）；六步回溯线（旧 filter v3 产物）冒烟 2 张全部 ds-ok（A–G 对齐门全过、匹配 6/11 期、命中已判定）；命中图进画规自证复现（读整张原图画规 + 值保真/逻辑自洽：26231 试点已跑通，26233–26235 已全量画规自证定稿，见 0a 表）。旧五阶段管线（26230–26232）成果：26231/26232 采集 831 条、**命中 0（单源视觉读数未独立复核，按口径全部剔除）**；26230 采集 694 条、**命中 6 条（单押口径，仅单码必中计命中）**，画规方法库 48 条已生成。**
 
 ---
 
@@ -72,11 +72,11 @@
 | 步 | 脚本 | 大功能 | 是否用 LLM |
 |---|---|---|---|
 | ① 爬取 | `tools/crawl_gouli.py` + `tools/fetch_lottery.py` | 抓博主走势图原图 + 排列五开奖历史（按时间切期 + 期号备注双重验证） | ✗ |
-| ② 确定性过滤 | `modules/image_recognize/filter_trend.py` v3 | 四信号置信分级（OpenCV + CNN 期号 OCR + tesseract 边界复核），剔掉"没画规律"的图 | ✗ |
-| ③ 裁剪+拼接 | `modules/image_recognize/crop_all.py` | 字色分类 + 标注行检测 + 行条**拼接**成栈图 | ✗ |
-| ④ resize | `modules/image_recognize/resize_crops.py` | 栈图 640→≥1024 宽（③④是一个连续预处理，可视为一步） | ✗ |
-| ⑤ 视觉判定+命中 | `modules/image_recognize/judge_accuracy.py` | 读**栈图（拼接结果）**行数字 → A–G 对齐自校正 → 逐位**确定性命中**（含无未来函数/防自证自检） | ✅ ds（glm 兜底） |
-| ⑥ 画规自证复现 | `modules/image_recognize/read_guihua.py` + `tools/reproduce_guihua.py` | 读**整张命中原图**的博主画规链 → 值保真 + 逻辑自洽复现 → 沉淀真画规 | ✅ glm |
+| ② 确定性过滤 | `modules/image_recognize/filter_trend.py` v5 | A 路判走势图（行网格结构，内容无关）+ B 路期号锚定目标期行（逐行**期号格放大 OCR**）→ 只输出能正确定位"上一期+目标期"的窄条；开奖对拍仅记录不设门槛 | ✗ |
+| ③ 裁剪 + resize（预处理） | `modules/image_recognize/crop_all.py` + `resize_crops.py` | 字色分类 + 标注行检测 + 行条**拼接**成栈图 → 640→≥1024 宽（原③④两个连续动作并成一步） | ✗ |
+| ④ 视觉判定+命中 | `modules/image_recognize/judge_accuracy.py` | 读**栈图（拼接结果）**行数字 → A–G 对齐自校正 → 逐位**确定性命中**（含无未来函数/防自证自检） | ✅ ds（glm 兜底） |
+| ⑤ 画规自证复现 | `modules/image_recognize/read_guihua.py` + `tools/reproduce_guihua.py` | 读**整张命中原图**的博主画规链 → 值保真 + 逻辑自洽复现 → 沉淀真画规 | ✅ glm |
+| ⑥ 更新文档 + 提交（收尾） | README.md + `docs/规律/` + git | 期跑完把结果/口径及时更新回 README 与 docs，`git commit & push`（每期收尾步，勿拖） | ✗ |
 
 ### 0.2 分步拆解（大功能 → 子功能 → ⚠️ 注意点）
 
@@ -96,29 +96,41 @@
 - **期号备注双重验证（2026-09-03 落地，负向收窄）**：爬虫已给每条帖注解 `explicit_period`（正文**唯一**显式期号，如"排列五26233期"→'26233'；无 / 多个不同期号 = None）；`include_prevday_tail` 归期时把「正文显式标 ≠ 目标期」的预测**以期号备注为准剔出**（正文比时间窗口更具体，博主自标的是别的期）。**只做负向剔除、绝不拉回复盘帖**：开奖后发帖仍由 `--cutoff` 时间边界剔（图上圈的是已知号码，正文标本期也不可信）。实测仅约 **7/694 帖**带显式期号，其中《4020》类复盘帖正文一串期号判歧义、不误剔。
 - `crawl_gouli` 要在**服务器容器内**跑（`.venv` 环境），需 UA + `Referer: gouli99.cn` 头；`fetch_lottery` 是 gb2312 编码、需 UA + `Referer: 500.com`。
 
-#### ② 确定性过滤（filter_trend.py v3，无 LLM）
+#### ② 确定性过滤（filter_trend.py v5，无 LLM）
 
-**大功能**：用确定性方法把"没在近期待开奖历史画规律的图"剔掉，减少送视觉模型的数量（583 → 保留 keep 134 + uncertain 285，剔除 164）。
+**大功能**：判走势图 + 定位目标期行 → 只输出「博主在目标期(26233)那一行附近画了规、且能正确定位」的窄条。
+v5（2026-09-03）用**两路解耦**取代 v3 的"四信号置信分级 + uncertain 送视觉"：
 
-**拆解（多信号分级，非单信号一刀切）**：
-- **S1 期号锚定**（`period_pairs`/`period_confidence`）：读底部多行期号 + 与开奖历史做多期连续性校验；≥2 行都匹配开奖才高置信。
-- **S2 标注存在性**：`process_one` 的饱和像素判定（行窗内饱和像素 > 200）。
-- **S3 标注质量分级**（`annotation_quality`）：`detect_annotations` 形态分类（band/box/ring/dot）+ 是否覆盖数字列。
-- **S4 列覆盖校验**（`detect_columns` v3）：灰度 <205 全域投影 → 宽峰 → 选最等距 5 列；标注 x 中心命中列才算有效画规。
+```
+A 路（结构，内容无关，先跑）：是走势图吗？
+  行网格结构成立（process_one 行带/横线族 + no-grid/no-anno 判定）→ 给 rows/row_pitch/row_half
+  B 路（内容锚，A 过才跑）：目标期行在哪？
+  底部最近 ~10 行**逐行读期号**（`period_pairs`），任一行期号 == calib/target/calib-1 → 锚定
+  calib 行 → target_row = calib_row + row_pitch → 横切「上一期 + 目标期」整块窄条（3×放大）
+  全无 → 排除（reason=目标期行未定位，记录留审计）
+```
 
-**具体实现技术**：
-- **OpenCV**：灰度投影列定位（`detect_columns`，`gray<205` 掩码全域投影 → 宽峰剔网格线/面板 → 等距选 5 列）；饱和度掩码标注检测（`saturation_mask`，`max-min>80 && max>120`）。
-- **CNN 期号 OCR**：`model/digit_cnn.py` — PyTorch 小模型，**32×48 灰度输入、3×Conv(32/64/128)+GAP+Linear(10)、~94k 参数**，合成字体训练（`train_digits.py`）。`ocr_digits_cnn` 多档阈值连通域切分 → 逐字分类；`conf<0.6` 或 top1-top2 差 <0.15 → 标 uncertain。
-- **tesseract**：子进程多档 `--psm`/upscale/阈值，**仅做 stale-period 边界复核**（不是主路）。
+**关键：期号读法 = 逐行期号格放大，不是宽条 OCR**（v4 教训，见 docs/上一期开奖行对拍前置filter设计-20260903.md）：
+- `_isolate_left_digits`：行带去横网格线 → 取**最左数字簇**（期号 = 每行最左独立打印数字串），
+  向右合并 gap<2.2×中位字宽的组件连读 5 位；簇宽 >0.16×图宽 → 左侧是密集多列（非独立期号格）→ 放弃。
+- `_read_period_cell`：期号格 tight crop ×8 放大 → CNN OCR（组合 (8,205)(10,210)(6,180)(6,235)）。
+- 宽条 `[0,0.32w]` 直接 OCR **会混列**（小/密真图期号+和值列糊成一串乱码）→ 只作隔离失败时的兜底（=v4 行为，不回退）。
+- **开奖对拍降级为仅记录**：读每行 5 开奖数字对拍权威开奖（`calib_anchor.match_row_draw`）依赖灰度投影
+  列位，而列位受期号/和值列混入产生**整串 ±1 系统性偏移** → 多期对拍无法区分「列位偏」和「期号读错」，
+  当门槛会误剔期号已定位对的图（v4 冒烟 4 张实证）→ 默认 `CALIB_MIN_OK=0`，只写 meta 不 gate。
 
 **⚠️ 注意点**：
-- **主路 OCR 固定 CNN**（`OCR_ENGINE` 默认 cnn），**不要用 auto**——auto 的"CNN 失败→tesseract 逐行兜底"会在大量 CNN 读不出的图上退化成旧 tesseract 全成本（实测 >13min 跑不完 583 张）。
-- **tesseract 只做 stale 边界复核**：CNN 单字 ~79% 会把近期期号尾位读错 1 位 → 锚点跳出 ±5 窗口 → 误排除不可逆；只对"将排除为 stale"的图（每期 ~26-40 张）复核。
-- **v3 修复两处误杀**：① ring（圈选）计入有效标注（原版只认 band/box 把真实画规图一刀切）；② 列定位换灰度投影（原 `find_cols_in_band` 阈值 140 把深色背景当前景 → 列全空 → 误判 trivial）。
-- 期号 OCR 阈值必须够高（180~235）才抓得到浅灰期号数字。
-- 白名单正则 `^s_2_<uuid>_<n>\.(png|jpg|jpeg)$` 防临时图污染。
+- **跑全量用 `--workers 8`，别用 16**：workers=16 时每线程 OCR 失败 spawn tesseract 子进程 → 16+ tesseract
+  自打负载（load >16 核）→ 退化到 ~0.2 张/s；**workers=8 实测 3.3 张/s（583 张 197s）**。
+- **期号格 OCR 固定 CNN**（`OCR_ENGINE` 默认 cnn），阈值必须够高（180~235）才抓得到浅灰期号数字；
+  tesseract 只做 CNN 读不出时的兜底。
+- **白名单正则** `^s_2_<uuid>_<n>\.(png|jpg|jpeg)$` 防临时图污染。
+- **全量 583 审计结论（2026-09-03，产物暂存 /tmp/full_v5，未 promote）**：keep **184** /
+  目标期行未定位 302（其中 **242 张读不到 60 窗口内任何期号**＝旧图/超窗/垃圾，兜底无望；60 张可读中仅
+  ~16 张末行错读，全部集中在密集多列截图）→ **「开奖 run 兜底」判不做**（探测密集图底部直接对拍
+  80233/80334 全 0–2 分无一≥3，兜底同样救不动）。vs v3 送视觉 134 → keep 净 +50。
 
-#### ③ 裁剪 + 拼接 → ④ resize（预处理，可视为一步）
+#### ③ 裁剪 + resize（预处理）
 
 **大功能**：把博主标注行裁剪出来、**拼接成一张栈图**、放大到视觉友好尺寸——三个连续动作合成一步预处理，产出视觉模型直接可读的单图。
 
@@ -133,13 +145,13 @@
 - **拼接是关键**：N 个标注行拼成一张栈图，视觉模型一次读完（比逐行裁剪省 90min+ 的纯视觉定位）。
 - 栈图固定 640 宽、最大 2200 高；**640 宽浅色数字读不清会死循环**，必须放大到 ≥1024 宽（放大后 33s 可读）——resize 这步不能省。
 - 行窗半高随行距缩放（`row_half = min(68, pitch*0.45)`），紧凑图避免相邻行窗重叠。
-- `--filter` 传 filter_report 时只裁剪 keep/uncertain 图；不覆盖任何旧产物。
+- `--filter` 传 filter_report 时只裁剪 `keep` 图（v5 report 只有 keep/exclude，v3 的 uncertain 已取消）；不覆盖任何旧产物。
 
-#### ⑤ 视觉判定 + 命中（judge_accuracy.py）
+#### ④ 视觉判定 + 命中（judge_accuracy.py）
 
-**大功能**：视觉模型**只读栈图（拼接结果）里的行数字**，其余（对齐/标注位/命中）全部确定性计算；**命中图作为⑥画规自证复现的输入**（不抽机器候选规律）。
+**大功能**：视觉模型**只读栈图（拼接结果）里的行数字**，其余（对齐/标注位/命中）全部确定性计算；**命中图作为⑤画规自证复现的输入**（不抽机器候选规律）。
 
-**确认**：是的——⑤ 直接读 resize 后的 `02_annotated.png`（标注行栈 = ③④ 的拼接产物），**不读原图**。
+**确认**：是的——④ 直接读 resize 后的 `02_annotated.png`（标注行栈 = ③ 的裁剪+resize 产物），**不读原图**。
 
 **正确判定逻辑（读对了才算）**：
 - `self_correct_safe`：**row0 用已知最新期锚定**，逐行读数与 `lottery_recent.json` 精确匹配**自校正**（读错的行被开奖历史纠正）。
@@ -158,11 +170,11 @@
 - 模型只承担行数字视觉读取；标注位置/数字/命中**全部确定性判定**。
 - ds `max_tokens=16000`、单次有界；网关断连抛 `DsConnError`（不无限重试）。
 - **G 门软化**：底部标注行"没读出"（read=None）不算失败——"没读到"不是"读错"。
-- 输出 `judge_<date>.json`（行读数/标注位/命中）+ 命中图集（供⑥读原图画规）。
+- 输出 `judge_<date>.json`（行读数/标注位/命中）+ 命中图集（供⑤读原图画规）。
 
-#### ⑥ 画规自证复现（read_guihua.py + reproduce_guihua.py）
+#### ⑤ 画规自证复现（read_guihua.py + reproduce_guihua.py）
 
-**大功能**：⑤ 只判定了"命中"，但命中的数字是不是**博主亲手画的规律**推出来的，还没证——⑥ 就是读**整张命中原图**的博主画规链（线/圈/连线轨迹），做**值保真 + 逻辑自洽**自证复现：能由规律库确定性推出预测才算真画规，否则判巧合/乱画。
+**大功能**：④ 只判定了"命中"，但命中的数字是不是**博主亲手画的规律**推出来的，还没证——⑤ 就是读**整张命中原图**的博主画规链（线/圈/连线轨迹），做**值保真 + 逻辑自洽**自证复现：能由规律库确定性推出预测才算真画规，否则判巧合/乱画。
 
 **拆解（两步）**：
 - **`read_guihua.py` 读原图画规**：读**整张命中原图**（画规跨多行，不能用裁目标行的窄条）→ GLM-5.3-flash 结构化 prompt ×2 复现 + 叙事 prompt 交叉验证 → 输出画规类型/画笔元素/画法描述/推导逻辑/预测 → `guihua_<period>_reads.json`。
@@ -174,12 +186,27 @@
 **verdict**：`ok`（自洽命中）/ `coincidence`（命中但无规律可推，不列规律）/ `reproducible-no-hit`（复现但未中）/ `ds-fail`（读错，需 GLM 兜底重读）。
 
 **⚠️ 注意点**：
-- 读**整张原图**，不是⑤的标注行栈图——画规跨多行，窄条读不出线/圈/连线。
+- 读**整张原图**，不是④的标注行栈图——画规跨多行，窄条读不出线/圈/连线。
 - **校准行锚定**（calib 26230=9 4 6 8 3 确认列位），**位置名绝不盲信 GLM 自报**（模型说"百位"就查百位是循环校验）。
 - **签名串重复是合法规律**：博主把 `2,9,1` 画两次、或 `1,4,2→1` 千位万位各画一遍，是博主亲手画的轨迹，按 `repeat` 计——**≠ 扫开奖历史表找先例**（那是 banned）。
 - **值保真只验真，必须加逻辑自洽**：任何一串真实开奖数字都满足值保真，否则红线穿过的 5/9 也当成圈点（链条超伸）。
 - **读轨迹线要读全**：签名串读不全会误判"巧合"。
 - 26231 试点终修：4 命中/5.00%（生活很无奈 repeat 万1、富老师 repeat 万1、487199630 swap 十9、用规说话=巧合不列）。
+
+#### ⑥ 更新文档 + git commit & push（收尾步）
+
+**大功能**：期跑完（①–⑤ 产物齐、命中/规律已定）立刻把结果/口径**写回 README 与 docs**，再提交推送——防止结果散落在日志/产物里、README 0a 表滞后。本步与数据管线无关，是仓库维护纪律。
+
+**拆解**：
+- 更新 README `0a` 历史表对应期行（采集/命中/命中率/完全命中/累计规律 + 指向 `docs/规律/<期>.md`），并把本期的口径要点追加进 §0a 口径说明。
+- 若新增方法/踩坑（filter 参数、网关行为、读数教训），同步 `docs/` 下设计文档与方法库。
+- `git add` 相关产物（代码 + README + `docs/规律/` + 本期数据产物 json）+ `git commit` + `git push origin`；提交信息带期号与定稿结论（如 `26230 定稿：...`）。
+- 目标：仓库 HEAD 始终反映"最近一期已定稿"，不留"跑完未落盘"的中间态。
+
+**⚠️ 注意点**：
+- 数据产物（爬取图等大文件）已被 `.gitignore` 排除，`git add` 时别 `git add -A data/` 误提交图片；只加代码/文档/小 json。
+- push 前先 `git status` 确认没有把临时目录（`debug/`、`logs/`、`.model_cache/`）带进去。
+- commit 信息沿用现仓库风格：中文 + 期号 + 结论（看 `git log --oneline` 前几条照抄格式）。
 
 ### 命令链（20260831 实测）
 
@@ -190,22 +217,22 @@ docker exec zhenjie sh -c 'cd /data/zhenjie/zj869 && .venv/bin/python tools/craw
 /usr/bin/python3 tools/fetch_lottery.py --out data/crawl/20260831/lottery_recent.json --limit 60
 # 期 P 博主单押 ①–⑤（自动并入前一日尾池；前一日目录缺失自动补爬）＝ tools/include_prevday_tail.py 一条命令，见 §0b
 
-# ② 确定性过滤（583 张，OpenCV 投影/掩码 + CNN 期号 OCR + tesseract 仅 stale 边界复核，无 LLM）
+# ② 确定性过滤（583 张，v5：A 路结构判走势图 + B 路期号格放大锚目标行，无 LLM）
+#    输出 filter_report.json（decision）+ strips/（keep 的上一期+目标期窄条）
+#    ⚠️ workers 用 8（16 会自打 tesseract 负载 → 0.2 张/s），实测 3.3 张/s / 197s
 /usr/bin/python3 modules/image_recognize/filter_trend.py \
     --date 20260831 --target-period 26233 \
-    --lottery data/crawl/20260831/lottery_recent.json
+    --lottery data/crawl/20260831/lottery_recent.json --workers 8
 
-# ③ 裁剪（复用，全量跑一次即可）
+# ③ 裁剪 + resize（keep 图：先 crop_all 拼接 → 再 resize 到 ≥1024 宽；复用，全量跑一次即可）
 /usr/bin/python3 modules/image_recognize/crop_all.py --date 20260831
-
-# ④ resize keep/uncertain 图（从 filter_report 取，不覆盖任何旧产物）
 /usr/bin/python3 modules/image_recognize/resize_crops.py \
     --date 20260831 \
     --filter data/crawl/20260831/filter_report.json \
     --manifest data/recognize/20260831_all/crops_all_manifest.json \
     --out-dir data/recognize/20260831_all/vision
 
-# ⑤ 视觉判定 + 规律（--files f1,f2 指定冒烟图；默认对全部 vision 图）
+# ④ 视觉判定 + 规律（--files f1,f2 指定冒烟图；默认对全部 vision 图）
 /usr/bin/python3 modules/image_recognize/judge_accuracy.py \
     --date 20260831 --target-period 26233 --draw "1 6 3 4 0" \
     --manifest data/recognize/20260831_all/crops_all_manifest.json \
@@ -215,46 +242,56 @@ docker exec zhenjie sh -c 'cd /data/zhenjie/zj869 && .venv/bin/python tools/craw
     --posts data/crawl/20260831/posts.json \
     --src-dir data/crawl/20260831/images
 
-# ⑥ 画规自证复现（读整张命中原图画规 + 值保真/逻辑自洽；26231 试点已跑通，26233 待跑）
-#   ⑥a 读原图画规（命中图，GLM 读线/圈/连线轨迹）
+# ⑤ 画规自证复现（读整张命中原图画规 + 值保真/逻辑自洽；26231 试点已跑通，26233 待跑）
+#   ⑤a 读原图画规（命中图，GLM 读线/圈/连线轨迹）
 /usr/bin/python3 modules/image_recognize/read_guihua.py \
     --period 26231 --draw "1 8 7 9 9" --calib 26230 --calib-draw "9 4 6 8 3" \
     --hits data/crawl/20260829/评审_26231命中5/hits.json \
     --images data/crawl/20260829/评审_26231命中5/images \
     --out data/crawl/20260829/guihua_26231_reads.json --per 2 --workers 6
-#   ⑥b 自证复现（值保真 + 逻辑自洽）
+#   ⑤b 自证复现（值保真 + 逻辑自洽）
 /usr/bin/python3 tools/reproduce_guihua.py \
     --json data/crawl/20260829/guihua_26231_reproducible.json \
     --lottery data/crawl/20260829/lottery_recent.json
+
+# ⑥ 更新文档 + 提交（收尾步，勿拖）：把结果写回 README 0a/docs → git add/commit/push
+git add README.md docs/规律/26233.json docs/规律/26233.md
+git commit -m '26233 定稿：…'
+git push origin
 ```
 
-### 过滤决策矩阵（filter_trend.py v3，全部确定性）
+### 过滤决策（filter_trend.py v5，20260831 全量 583 实测，workers=8/197s）
 
-| 条件 | 决策 | 20260831 计数 |
+| 判定 | 含义 | 20260831 计数 |
 |---|---|---|
-| 非走势图版式（行带/列结构不匹配） | `exclude/no-chart` | 80 |
-| 走势图但无任何标注 | `exclude/no-anno` | 17 |
-| 期号命中但距目标 > window（旧期画） | `exclude/stale-period` | 12 |
-| 有标注但全是孤立 dot / 列定位失败且无有效画规 | `exclude/anno-trivial` | 55 |
-| 期号高置信 + gap∈window + 标注覆盖数字列 | `keep-high` | 28 |
-| 期号在窗口内 + 标注存在（质量中等） | `keep-med` | 106 |
-| 期号弱（读不出/不连续）但结构+标注像走势图 | `uncertain`（送视觉） | 285 |
+| `keep` | A 路行网格成立 + B 路期号锚到 calib/target/calib-1 → 切「上一期+目标期」窄条 | **184**（vs v3 送视觉 134 → 净 +50）|
+| `exclude/no-chart` | A 路结构不成立（非走势图/无行网格） | 80 |
+| `exclude/no-anno` | 走势图但无任何标注 | 17 |
+| `exclude/目标期行未定位` | B 路期号全零命中 → 无法正确定位目标行（宁可丢不可错） | 302 |
 
-v3 修复的两处误杀根因：① **ring（圈选）计入有效标注**（原版只认 band/box，把真实画规图一刀切）；
-② **列定位换灰度投影**（`detect_columns`：gray<205 全域投影→宽峰→5 列等距选择，深色图也能用；
-原 `find_cols_in_band` 阈值 140 把深色背景当前景 → 列全空 → 误判 trivial）。结果 anno-trivial 236→55。
+v5 相比 v3 的取舍：v3 用「keep-high/keep-med/uncertain 全送视觉」容忍定位不确定；
+v5 只认**期号格放大能锚到目标行**的图，锚不到就排除（302 审计：242 为旧图/超窗/垃圾本不可用，
+~60 可读中仅 ~16 张是密集多列截图末行错读——开奖 run 兜底探测判不可救，见 §0.2-②）。
+
+> 数据流：`filter_report.json`（decision 列表）供下游 gate / 回溯线取 keep；窄条写
+> `strips/<stem>_strip.png` + `manifest.json`（`strip_type=rows`，含 `y_range/x_range/calib_draw`），
+> 供 `read_blogger_prediction.py` 读博主目标期行（单押线，include_prevday_tail 链首步）。
 
 ### 冒烟结果（20260831 / 26233 / draw=1 6 3 4 0）
 
-| 图 | 过滤决策 | 判定 | 对齐（A–G 门） | 匹配期 | 命中 |
+> ⚠️ 该冒烟属**六步回溯线**（④ judge_accuracy 读 ③ 栈图），运行于 **v5 filter 之前的旧产物**
+> （"过滤决策"列 keep-med/keep-high 是已废弃的 v3 标签）。filter 升级 v5 后这两类标签不再产出，
+> 回溯线如需重跑请按 v5 `keep` 集取图。
+
+| 图 | 过滤决策(v3) | 判定 | 对齐（A–G 门） | 匹配期 | 命中 |
 |---|---|---|---|---|---|
 | `s_2_0ee3536d…_2.jpg` | keep-med | ds-ok | 全过（虚构0/漏0、读数 7/9 行） | 26221→26232（6 期） | row0 千位=6（26221）、row3 十位=4（26224）、row5 万位=1（26225） |
 | `s_2_33b7cc04…_2.jpg` | keep-high | ds-ok | 全过（读数 11/16 行） | 26222→26232（11 期） | row6 千位=6（26228），与 glm 核验命中一致 |
 
-命中判定（⑤ judge_accuracy）：冒烟 2 图 → 命中与标注位已判定。
+命中判定（④ judge_accuracy）：冒烟 2 图 → 命中与标注位已判定。
 判定口径 = **对已开奖回溯判定**：模型读博主标注位置+数字，A–G 门保证行→期映射可靠后，
 确定性逐位算 hit（命中 ⟺ 读数==`target_draw[p]`）+ 无未来函数自检（含本期行自证剔除）。**杀号/报号/铁率/不定位不计入命中。**
-命中图进⑥画规自证复现（读整张原图画规 + 值保真/逻辑自洽），26231 试点终修 4 命中/5.00%。
+命中图进⑤画规自证复现（读整张原图画规 + 值保真/逻辑自洽），26231 试点终修 4 命中/5.00%。
 
 ### 关键设计（踩坑沉淀）
 
@@ -266,7 +303,7 @@ v3 修复的两处误杀根因：① **ring（圈选）计入有效标注**（�
 - **resize 夹逼**：过大下采样到 ≤1024×2200，过小（640 栈图）上采样到 ≥1024 宽，统一 JPEG q90。
 - **零污染约束**：filter/resize/judge 只写新文件；`image_patterns_with_blogger.json`（2145 条旧流程产物）、
   `crops_all_manifest.json`、`exclude_list.json` 哈希校验不变；20260829/30 目录不动。
-  **⑥画规自证复现** 只写 `guihua_<period>_reads.json` + `.verdict.json`；`judge_<date>.json` 只读不写。
+  **⑤画规自证复现** 只写 `guihua_<period>_reads.json` + `.verdict.json`；`judge_<date>.json` 只读不写。
   旧校验器 `verify_patterns_26233.py` / `out_of_sample_hit_26233.py`（服务旧五阶段流程，机器候选核验已降级）保留不删。
 
 ---
@@ -332,17 +369,17 @@ v3 修复的两处误杀根因：① **ring（圈选）计入有效标注**（�
 ## 4. 目录结构```
 zj869/
 ├── modules/image_recognize/     # 六步管线（现行，2026-08-31 起）
-│   ├── filter_trend.py          # ② 确定性过滤（OpenCV+CNN+OCR，无 LLM）→ filter_report.json
-│   ├── crop_all.py              # ③ 裁剪（复用；仅 status==cropped 进识别）
-│   ├── resize_crops.py          # ④ 显式 resize（640→≥1024 宽）→ vision/*.jpg
-│   ├── judge_accuracy.py        # ⑤ 视觉判定+命中 → judge_<date>.json + 命中图集
-│   ├── read_guihua.py           # ⑥ 读整张命中原图画规 → guihua_<period>_reads.json
-│   ├── verify_patterns.py       # （旧）机器候选核验，已降级进⑤自检，保留不删
+│   ├── filter_trend.py          # ② 确定性过滤 v5（A 结构判走势图 + B 期号格锚目标行）→ filter_report.json + strips/
+│   ├── crop_all.py              # ③ 裁剪+拼接（③ 前半；仅 status==cropped 进识别）
+│   ├── resize_crops.py          # ③ resize（③ 后半，640→≥1024 宽）→ vision/*.jpg
+│   ├── judge_accuracy.py        # ④ 视觉判定+命中 → judge_<date>.json + 命中图集
+│   ├── read_guihua.py           # ⑤a 读整张命中原图画规 → guihua_<period>_reads.json
+│   ├── verify_patterns.py       # （旧）机器候选核验，已降级进④自检，保留不删
 │   └── cv_trend_reader/         # 底层原语（行带/列定位/标注形态/期号OCR/开奖匹配）
 ├── agents/                    # 原始多Agent框架（collector 已接真实数据）
 ├── tools/                     # 数据/验证/方法库工具（主战场）
 │   ├── crawl_gouli.py         # ① gouli99 论坛图爬虫
-│   ├── reproduce_guihua.py    # ⑥ 画规自证复现（值保真+逻辑自洽）
+│   ├── reproduce_guihua.py    # ⑤b 画规自证复现（值保真+逻辑自洽）
 │   ├── crop_charts.py         # 裁剪工具（bottom45/zoom/full 三模式）
 │   ├── verify_chart_hits.py   # ④ 命中核验主脚本（对齐协议+双读）
 │   ├── verify_phase2.py       # ④ x坐标三读补验（AMBIGUOUS/ERROR）

@@ -143,6 +143,8 @@ def col_centers_in_tile(meta, strip_type, fr_entry, W):
       row  型  filter_report.cols 是原图坐标、条为全宽 → c*3
     映射失败/越界 → None（退回无标尺，行为同旧版）。"""
     centers = None
+    if strip_type == "rows":
+        return None  # v4 多行窄条：横切整块，废弃列标尺，靠上一期打印开奖数字对齐列位
     try:
         if strip_type == "cols" and meta.get("cols") and meta.get("x_range"):
             x0 = meta["x_range"][0]
@@ -161,18 +163,21 @@ def col_centers_in_tile(meta, strip_type, fr_entry, W):
 def glm_prompt(period, calib=None):
     calib_txt = ""
     if calib:
-        calib_txt = (f"\n对齐锚定：图中可能可见上一期开奖行，{calib[0]} = {calib[1]}"
-                     "（万=第1个数字 千=第2 百=第3 十=第4 个=第5）。"
-                     "若可见，用它校准\"哪个格是万位\"，确保位名准确。")
-    return (f"图片是 N 张竖直堆叠的排列五走势图，每张是「{period} 期目标期行」的窄条。"
+        calib_txt = (f"\n对齐锚定：每张窄条**必然包含上一期开奖行**（上一行，期号 {calib[0]}，"
+                     f"5 个打印开奖数字 = {calib[1]}，从左到右=万 千 百 十 个）。"
+                     "下一行才是目标期（博主写预测的行）。"
+                     "用上一期打印数字对齐列位：上一期第1个数字=万位、第5个=个位，"
+                     "据此判断下一行博主彩色数字落在哪个位，确保位名准确，别自己数格。")
+    return (f"图片是 N 张竖直堆叠的排列五走势图窄条，每张含**上下两行**："
+            "上一行 = 上一期开奖行（期号 + 5 个打印开奖数字）；"
+            f"下一行 = 「{period} 期目标期行」（博主在这一行手写/圈预测数字）。"
             "每张顶部标了红色编号 #NNN。\n"
             "\n"
-            "每张窄条从左到右包含 5 个开奖数字格 = 万位、千位、百位、十位、个位（固定顺序），"
+            "每张窄条每行从左到右是 5 个开奖数字格 = 万位、千位、百位、十位、个位（固定顺序），"
             "即第1格=万、第5格=个。若最左还混有期号/和值列（数字、文字），一律忽略，只认这 5 个开奖格。\n"
-            "每张顶部可能有红色小字列标 **万 千 百 十 个**（各对齐一列），那是列位标尺："
-            "红色小字底下那条竖线所在列就是对应位名，读博主彩色数字时**照标尺报位置**，别自己数格。\n"
             "\n"
-            "博主在部分格子里**手写/圈**了彩色数字（红/紫/蓝）。对每张，输出严格 JSON 数组，元素格式：\n"
+            "博主在**下一行（目标期行）**的部分格子里手写/圈了彩色数字（红/紫/蓝）。对每张，"
+            "输出严格 JSON 数组，元素格式：\n"
             "[{{\"idx\":\"#NNN\",\"预测\":[{{\"位置\":\"百位\",\"候选\":[4]}},"
             "{{\"位置\":\"万位\",\"候选\":[3,5]}}]}}]\n"
             "\n"
@@ -184,7 +189,7 @@ def glm_prompt(period, calib=None):
             "- 若博主这行**什么都没写**（只有圈/线/空白）→ \"预测\":[]。\n"
             "- 数量=图片里贴的张数，不多不少，idx 严格等于标签。\n"
             f"{calib_txt}\n"
-            "**不要思考、不要推理**：你只需直接把图上的彩色数字读出来、按上述格式填 JSON，"
+            "**不要思考、不要推理**：你只需直接把图上目标期行的彩色数字读出来、按上述格式填 JSON，"
             "不要犹豫、不要分析规律、不要加任何说明文字。只输出一个 JSON 数组，其余一律不写。")
 
 
@@ -336,6 +341,8 @@ def one_batch(batch, api_ctx):
         rec["predicted_positions"] = preds
         rec["target_period"] = api_ctx["period"]
         rec["strip_type"] = strip_type
+        rec["full_width"] = (meta or {}).get("full_width")
+        rec["col_anchor"] = (meta or {}).get("col_anchor")
         if rej:
             rec["reject_reason"] = rej
     return out

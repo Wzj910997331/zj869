@@ -168,16 +168,26 @@ def ensure_pool(date_dir, period, draw, calib_period, calib_draw, lottery, pool_
     imgs = os.path.join(date_dir, "images")
     posts_p = posts_p or os.path.join(date_dir, "posts.json")
 
+    # filter_trend v5 会自写全 keep 的行窄条 + manifest；博主单押链只消费
+    # gate=pass 的 cols 窄条（extract_prediction_strip 产物，见下）。故把 v5 的
+    # 自产窄条导向独立暂存目录，避免覆盖/混入消费目录 data/crawl/<date>/strips。
+    filter_strips = os.path.join(date_dir, ".filter_v5_strips")
+
     if not os.path.exists(fr):
         run("modules/image_recognize/filter_trend.py",
             "--date", base, "--target-period", period,
-            "--lottery", lottery, "--window", "5", "--out", fr)
+            "--lottery", lottery, "--workers", "8",
+            "--out-dir", filter_strips, "--out", fr)
     if not os.path.exists(gate):
         run("modules/image_recognize/blogger_hit_gate.py",
             "--date", base, "--filter", fr, "--images", imgs,
             "--target-period", period, "--calib-period", calib_period,
             "--calib-draw", calib_draw, "--out", gate)
-    if not os.path.exists(man):
+    # 消费目录 strips/manifest 只认 extract 产物（gate=pass 子集）：
+    # 缺失、或残留 v5 自写的全 keep manifest 时都必须重跑 extract 收敛。
+    man_is_extract = (os.path.exists(man) and
+                      read_json(man).get("generated_by") == "extract_prediction_strip.py")
+    if not man_is_extract:
         run("modules/image_recognize/extract_prediction_strip.py",
             "--date", base, "--filter", fr, "--gate", gate,
             "--images", imgs, "--target-period", period,

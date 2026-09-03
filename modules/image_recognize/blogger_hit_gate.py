@@ -38,7 +38,9 @@ from modules.image_recognize.cv_trend_reader.reader import (  # noqa: E402
     detect_annotations, load,
 )
 
-KEEP_DECISIONS = {"keep-high", "keep-med", "uncertain"}
+# v4 以前 report decision: keep-high/keep-med/uncertain/exclude；
+# v5 改为 keep/exclude（A 结构判走势图 + B 期号锚目标行后直接 keep）——两种都要认。
+KEEP_DECISIONS = {"keep-high", "keep-med", "uncertain", "keep"}
 
 
 def read_json(path):
