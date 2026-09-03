@@ -90,24 +90,43 @@ def col_crop(img, file, meta, fr_entry, strip_type):
 
 
 def build_montage(tiles):
-    """tiles: list[(label, PIL.Image|ndarray)] 纵向堆叠。每条统一缩放到宽 TARGET_W（压缩高度、
-    复刻实测 4s 可读尺度）。返回 montage Image。"""
+    """tiles: list[(label, PIL.Image|ndarray)] 或 (label, img, centers_native)。
+    centers_native: 该窄条在**原生宽**(缩到 TARGET_W 前)下 5 列中心的 x 像素坐标。
+    有则在该条顶部多叠一行红色列标（万/千/百/十/个，各对齐一列中心）——给视觉模型一条
+    显式列位标尺，照标尺报位名，从源头消除「跳期号/和值列→万千百十个整串偏移」的自报位名错误。
+    返回 montage Image。
+    """
     TARGET_W = 760
     MAX_H = 180          # 每条缩到 760 宽后若过高再按高缩，保证 montage 紧凑、DS 好读
-    header = 24
+    label_h = 24         # #NNN 编号行
+    ruler_h = 18         # 万..个 列标尺行（仅当该条有 centers）
     ims = []
-    for label, t in tiles:
+    for it in tiles:
+        label = it[0]
+        t = it[1]
+        centers = it[2] if len(it) > 2 else None
         if isinstance(t, np.ndarray):
             im = Image.fromarray(t.astype("uint8"))
         else:
             im = t
+        native_w = im.width
         if im.width != TARGET_W:
             im = im.resize((TARGET_W, max(1, int(im.height * TARGET_W / im.width))))
         if im.height > MAX_H:
             im = im.resize((max(1, int(im.width * MAX_H / im.height)), MAX_H))
-        canv = Image.new("RGB", (im.width, im.height + header), "white")
-        canv.paste(im, (0, header))
-        ImageDraw.Draw(canv).text((3, 3), label, fill="red")
+        hh = label_h + (ruler_h if centers else 0)
+        canv = Image.new("RGB", (im.width, im.height + hh), "white")
+        canv.paste(im, (0, hh))
+        d = ImageDraw.Draw(canv)
+        d.text((3, 3), label, fill="red")
+        if centers:
+            sc = im.width / float(native_w)
+            for name, cx in zip(COL_POS, centers):
+                x = int(cx * sc)
+                if 0 <= x <= im.width:
+                    d.text((max(0, x - 4), label_h), name, fill="red")
+                    d.line([(x, label_h + 12), (x, label_h + ruler_h - 2)],
+                           fill="red", width=1)
         ims.append(canv)
     H = sum(i.height for i in ims)
     mont = Image.new("RGB", (TARGET_W, H), "white")
@@ -116,6 +135,27 @@ def build_montage(tiles):
         mont.paste(i, (0, y))
         y += i.height
     return mont
+
+
+def col_centers_in_tile(meta, strip_type, fr_entry, W):
+    """窄条内 5 个开奖列中心(条内像素 x)。条为原图 3x：
+      cols 型  meta.cols/x_range 是原图坐标 → (c-x0)*3
+      row  型  filter_report.cols 是原图坐标、条为全宽 → c*3
+    映射失败/越界 → None（退回无标尺，行为同旧版）。"""
+    centers = None
+    try:
+        if strip_type == "cols" and meta.get("cols") and meta.get("x_range"):
+            x0 = meta["x_range"][0]
+            centers = [(int(c) - x0) * 3 for c in meta["cols"]]
+        elif fr_entry and fr_entry.get("cols"):
+            centers = [int(c) * 3 for c in fr_entry["cols"]]
+    except (TypeError, ValueError):
+        return None
+    if not centers or len(centers) < 5:
+        return None
+    if any(c < 0 or c > W for c in centers):
+        return None
+    return centers
 
 
 def glm_prompt(period, calib=None):
@@ -129,6 +169,8 @@ def glm_prompt(period, calib=None):
             "\n"
             "每张窄条从左到右包含 5 个开奖数字格 = 万位、千位、百位、十位、个位（固定顺序），"
             "即第1格=万、第5格=个。若最左还混有期号/和值列（数字、文字），一律忽略，只认这 5 个开奖格。\n"
+            "每张顶部可能有红色小字列标 **万 千 百 十 个**（各对齐一列），那是列位标尺："
+            "红色小字底下那条竖线所在列就是对应位名，读博主彩色数字时**照标尺报位置**，别自己数格。\n"
             "\n"
             "博主在部分格子里**手写/圈**了彩色数字（红/紫/蓝）。对每张，输出严格 JSON 数组，元素格式：\n"
             "[{{\"idx\":\"#NNN\",\"预测\":[{{\"位置\":\"百位\",\"候选\":[4]}},"
@@ -229,13 +271,16 @@ def one_batch(batch, api_ctx):
     # 用整条 raw（1:1 缩到宽 TARGET_W）+ build_montage 高度上限，复刻实测 4s 的紧凑尺度。
     # 不 col_crop：裁窄只缩宽不缩高，再 resize 到 760 反而把高放大(250-390px) → montage 过高，
     # DS patch 太多，后端负载下易超时。raw 整条缩到 760 宽后高仅 ~90-125px，稳定可读。
+    # 列位偏移根治：build_montage 按 col_centers_in_tile 在每条顶部画 万/千/百/十/个 红标尺。
     for label, file, meta, strip_type, blogger in batch:
         stem = os.path.splitext(file)[0]
         p = os.path.join(api_ctx["strips_dir"], f"{stem}_strip.png")
         if not os.path.exists(p):
             continue
-        img = np.array(Image.open(p).convert("RGB"))
-        tiles.append((label, img))
+        img = Image.open(p).convert("RGB")
+        fr_entry = fr.get(file) or {}
+        centers = col_centers_in_tile(meta, strip_type, fr_entry, img.width)
+        tiles.append((label, img, centers))
     if not tiles:
         return {b[1]: {"file": b[1], "error": "缺图"} for b in batch}
     mont = build_montage(tiles)
