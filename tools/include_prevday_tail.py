@@ -9,6 +9,11 @@
   的 predictions 合并 → ④ verify → ⑤ export，覆盖 docs/规律/<period>.{json,md}。
   也就是：**跑一个期 = 跑本脚本一条命令**，尾池默认并入，无需额外步骤。
 
+  2026-09-03 再加固：
+    - 前一日目录缺失时**自动 crawl_gouli 补爬**（爬失败仅跳过尾池，重跑同命令即并入）。
+    - **期号备注 × 时间切期交叉核验**：predictions 里正文唯一显式期号 ≠ 目标期的条目，
+      以期号为准剔出（博主自标别的期，比时间窗口更具体）；不误剔无/多期歧义，不拉回复盘帖。
+
 用法（期 P 一键 ①–⑤，主池产物缺失会自动先跑主池，幂等可重复执行）：
   python3 tools/include_prevday_tail.py \
       --period 26233 --draw "1 6 3 4 0" \
@@ -42,6 +47,7 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_PAT = re.compile(r"s_2_[0-9a-f-]+_\d+\.(?:jpg|jpeg|png)$")
 UUID_PAT = re.compile(r"(s_2_[0-9a-f-]+)_\d+\.(?:jpg|jpeg|png)$")
+PERIOD_NOTE_RE = re.compile(r"(?<!\d)(\d{5})(?!\d)\s*期")  # 与 tools/crawl_gouli.py 保持一致
 
 
 def read_json(p):
@@ -99,6 +105,55 @@ def build_tail_images(prev_date, prev_cutoff, tail_dir):
     print(f"[tail] {prev_date} 帖子 {len(files)} 张图；≥{prev_cutoff} → {len(tail)} 张进尾池"
           f"（新 symlink {n_new}）")
     return len(tail)
+
+
+def explicit_period(content):
+    """正文唯一显式期号 → 5 位字符串；无 / 多个不同期号（如《4020》一串复盘期号）→ None。"""
+    if not content:
+        return None
+    s = set(m.group(1) for m in PERIOD_NOTE_RE.finditer(str(content)))
+    return s.pop() if len(s) == 1 else None
+
+
+def crawl_prev_day(prev_date):
+    """前一日目录缺失时自动 crawl_gouli 补爬（网络失败返回 False，调用侧跳过尾池）。"""
+    iso = f"{prev_date[:4]}-{prev_date[4:6]}-{prev_date[6:8]}"
+    cmd = [sys.executable, os.path.join(REPO, "tools", "crawl_gouli.py"), iso]
+    print(f"[tail] 前一日目录缺失 → 自动爬取 {iso}")
+    r = subprocess.run(cmd)
+    return r.returncode == 0
+
+
+def period_note_crosscheck(pred_path, posts_path, period, pool_label):
+    """期号备注 × 时间切期 交叉核验：predictions 里「正文唯一显式期号 ≠ 目标期」的条目，
+    以期号备注为准剔出（正文比时间窗口更具体：博主自标的就是另一期）；无期号/多期歧义
+    不误剔。只做负向收窄——绝不把开奖后复盘帖（已被 --cutoff 剔）拉回来。
+    幂等：剔完重跑不再命中。"""
+    if not pred_path or not os.path.exists(pred_path) or not os.path.exists(posts_path):
+        return
+    byid = {p.get("id"): p.get("content", "") for p in read_json(posts_path) if p.get("id")}
+    d = read_json(pred_path)
+    items = d.get("predictions") or []
+    keep, dropped = [], []
+    for r in items:
+        m = UUID_PAT.match(r.get("file") or "")
+        e = explicit_period(byid.get(m.group(1), "")) if m else None
+        if e is not None and e != str(period):
+            dropped.append({"blogger": r.get("blogger"), "file": r.get("file"),
+                            "period_in_text": e})
+        else:
+            keep.append(r)
+    if not dropped:
+        return
+    d["predictions"] = keep
+    d["n_strips"] = len(keep)
+    d["n_periodnote_dropped"] = len(dropped)
+    d["periodnote_dropped"] = dropped
+    d["说明"] = (f"{d.get('说明', '')}；[期号备注] 正文显式标 {period} 之外期号的 "
+                f"{len(dropped)} 条以期号为准剔除")
+    write_json(d, pred_path)
+    print(f"[期号备注] {pool_label}: 正文显式期号≠{period} 剔除 {len(dropped)} 条 "
+          f"({[x['period_in_text'] for x in dropped]})")
 
 
 def ensure_pool(date_dir, period, draw, calib_period, calib_draw, lottery, pool_label,
@@ -177,20 +232,32 @@ def main():
                             args.calib_period, args.calib_draw, lottery,
                             "主池", main_cut)
 
-    # ---- 2. 尾池 ①-③（默认并入前一天 ≥前日开奖 的晚发帖）----
+    # ---- 2. 尾池 ①-③（默认并入前一天 ≥前日开奖 的晚发帖；目录缺失自动补爬）----
     tail_pred = None
     if not args.no_tail:
-        tail_dir = args.tail_dir or os.path.join(REPO, "data", "crawl", f"{prev_date}_tail")
-        n = build_tail_images(prev_date, prev_cut, tail_dir)
-        if n > 0:
-            prev_posts = os.path.join(REPO, "data", "crawl", prev_date, "posts.json")
-            tail_pred = ensure_pool(tail_dir, args.period, args.draw,
-                                    args.calib_period, args.calib_draw, lottery,
-                                    "尾池", main_cut, posts_p=prev_posts)
-        else:
-            print("[tail] 无 ≥ 截止的晚发帖，跳过尾池读取")
+        prev_dir = os.path.join(REPO, "data", "crawl", prev_date)
+        if not os.path.isdir(prev_dir) and not crawl_prev_day(prev_date):
+            print("[tail] ⚠ 自动爬取前一日失败 → 本次只跑主池；网络恢复后重跑同一条命令即并入尾池")
+        if os.path.isdir(prev_dir):
+            tail_dir = args.tail_dir or os.path.join(REPO, "data", "crawl", f"{prev_date}_tail")
+            n = build_tail_images(prev_date, prev_cut, tail_dir)
+            if n > 0:
+                prev_posts = os.path.join(prev_dir, "posts.json")
+                tail_pred = ensure_pool(tail_dir, args.period, args.draw,
+                                        args.calib_period, args.calib_draw, lottery,
+                                        "尾池", main_cut, posts_p=prev_posts)
+            else:
+                print("[tail] 无 ≥ 截止的晚发帖，跳过尾池读取")
     else:
         print("[tail] --no-tail，跳过前一天尾池")
+
+    # ---- 2.5 期号备注 × 时间切期 交叉核验（以期号为准做负向剔除，见 period_note_crosscheck）----
+    period_note_crosscheck(main_pred, os.path.join(main_dir, "posts.json"),
+                           args.period, "主池")
+    if tail_pred:
+        period_note_crosscheck(tail_pred,
+                               os.path.join(REPO, "data", "crawl", prev_date, "posts.json"),
+                               args.period, "尾池")
 
     # ---- 3. 合并主池 + 尾池 predictions ----
     mp = read_json(main_pred)
