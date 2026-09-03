@@ -44,10 +44,16 @@ import sys
 from datetime import datetime, timedelta
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_PAT = re.compile(r"s_2_[0-9a-f-]+_\d+\.(?:jpg|jpeg|png)$")
 UUID_PAT = re.compile(r"(s_2_[0-9a-f-]+)_\d+\.(?:jpg|jpeg|png)$")
 PERIOD_NOTE_RE = re.compile(r"(?<!\d)(\d{5})(?!\d)\s*期")  # 与 tools/crawl_gouli.py 保持一致
+
+# 由 main() 解析 --main-date 后设置：run()/crawl_prev_day 用它给每个子阶段喂 watchdog logdir。
+RUN_CTX = {"logdir": "logs/watchdog"}
+
+from stage_runner import run_stage  # noqa: E402  （同目录；run() 全程 watchdog）
 
 
 def read_json(p):
@@ -62,12 +68,19 @@ def write_json(o, p):
 
 
 def run(script, *args):
+    """每个子阶段都过 stage_runner watchdog：无输出心跳 + wall 硬顶，卡死即 kill 进程组。
+
+    退出码约定：0=正常；124/125=被 watchdog kill（卡死/超预算）——产物幂等，重跑即续。
+    """
     cmd = [sys.executable, os.path.join(REPO, script), *args]
-    print(f"\n$ {' '.join(cmd)}", flush=True)
-    r = subprocess.run(cmd, capture_output=False)
-    if r.returncode != 0:
-        sys.exit(f"  ✗ {script} 退出码 {r.returncode}")
-    return r
+    rc = run_stage(cmd, label=os.path.basename(script),
+                   logdir=RUN_CTX.get("logdir") or "logs/watchdog")
+    if rc != 0:
+        if rc in (124, 125):
+            sys.exit(f"  ✗ {script} 被 watchdog kill（{ 'wall 超预算' if rc == 124 else 'idle 无输出卡死' }）"
+                     f"→ 诊断见 logs/watchdog/；重跑同一条命令即幂等续跑")
+        sys.exit(f"  ✗ {script} 退出码 {rc}")
+    return rc
 
 
 def full_dt(ymd, hm):
@@ -120,8 +133,9 @@ def crawl_prev_day(prev_date):
     iso = f"{prev_date[:4]}-{prev_date[4:6]}-{prev_date[6:8]}"
     cmd = [sys.executable, os.path.join(REPO, "tools", "crawl_gouli.py"), iso]
     print(f"[tail] 前一日目录缺失 → 自动爬取 {iso}")
-    r = subprocess.run(cmd)
-    return r.returncode == 0
+    rc = run_stage(cmd, label="crawl_gouli.py",
+                   logdir=RUN_CTX.get("logdir") or "logs/watchdog")
+    return rc == 0
 
 
 def period_note_crosscheck(pred_path, posts_path, period, pool_label):
@@ -223,6 +237,7 @@ def main():
     ap.add_argument("--lottery", default=None,
                     help="开奖表(默认 data/crawl/<main-date>/lottery_recent.json)")
     args = ap.parse_args()
+    RUN_CTX["logdir"] = os.path.join("logs", "watchdog", args.main_date)
 
     main_dir = os.path.join(REPO, "data", "crawl", args.main_date)
     if not os.path.isdir(main_dir):

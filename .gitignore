@@ -17,3 +17,7 @@ __pycache__/
 
 # 编辑备份(不入库)
 *.bak*
+
+# 流程监控诊断（stage_runner watchdog 的 *.deadlock.json 与旧日志不入库）
+/logs/
+

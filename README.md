@@ -41,6 +41,10 @@
 这一条线才是**命中的正身**——命中只认**博主写在目标期行的手写数字**（非"看圈/看历史落点/程序自摸规律"）。仅对开奖前发帖的目标期行窄条走：
 
 > **新期一键（26234 起）**：爬好开奖日目录（前一日缺失会自动补爬），期 P 全流程 = `tools/include_prevday_tail.py --period P --draw … --main-date <开奖日>` **一条命令**（默认并入前一日尾池 → ①–⑤；归期口径见 §0.2-①）。下方 26231 的命令是早期手动分步版。
+>
+> **一键全期 + 卡死监控（2026-09-03 起，watchdog）**：连 crawl/fetch/⑥⑦/定稿也要串的话，用
+> `python3 tools/run_period.py --period P --draw … --calib-period … --calib-draw … --main-date <开奖日>`，
+> 从爬取到权威 docs 全程受监控（每阶段 idle+wall 双闹钟，卡死 kill 留诊断、幂等续跑），用法见 §0 末尾「流程卡死监控」节。
 
 ```
 ① 裁目标期行窄条 + 开奖前发帖过滤(21:30 cutoff)
@@ -260,6 +264,33 @@ git commit -m '26233 定稿：…'
 git push origin
 ```
 
+### 流程卡死监控（watchdog，2026-09-03 起）
+
+踩坑沉淀：GLM/DS 网关 120s+ 超时、filter tesseract 自打负载、crawl 网络悬挂——裸 `subprocess.run`
+无超时无心跳，卡死只能肉眼盯。现已全流程套 watchdog：
+
+- **tools/stage_runner.py**（库 + CLI）：`run_stage(cmd, label, idle, wall, logdir)` 包任意子进程。
+  判据两把闹钟：**idle** = 距最后一行 stdout > N 秒判卡死（退出码 **125**）；**wall** = 总运行超预算
+  判死转（退出码 **124**）。卡死即 `killpg`（`start_new_session=True`，连 tesseract 等孙进程一起清），
+  诊断写 `logs/watchdog/<label>.deadlock.json`（最后 ~50 行输出）。**续跑口径**：各步产物幂等
+  （filter_report/gate/strips/read json 存在即复用），kill 后**重跑同一条命令即从断点续**。
+  预算表按脚本 basename 查（见文件内 `_BUDGETS`）；idle 宁宽勿窄（慢≠死），死转靠 wall 兜。
+  单条兜底：`python3 tools/stage_runner.py run --label filter --idle 240 --wall 3600 -- <cmd>`；
+  自测：`python3 tools/stage_runner.py selftest`（idle-kill/wall-kill/孙进程组全清，全 PASS）。
+  ⚠️ 前提：child 必须 `PYTHONUNBUFFERED=1` 逐行输出（run_stage 自动注入），否则块缓冲进度
+  "到了也不来"，心跳看不到。
+- **tools/run_period.py**（一键全期，watchdog 串起 爬取→开奖→①–⑤→⑥⑦→定稿）：
+  ```
+  python3 tools/run_period.py --period 26230 --draw "9 4 6 8 3" \
+      --calib-period 26229 --calib-draw "2 8 0 5 4" --main-date 20260828
+  ```
+  每阶段受监控：① crawl 补缺失日目录（已有 posts+images 跳过）→ ② fetch 开奖表（已含该期跳过）→
+  ③ ①–⑤ include_prevday_tail（内部各步已各自 watch）→ ④ ⑥⑦ run_guihua_verify（仅当 docs
+  `hit_records>0`；命中图合并视图 `data/crawl/<main-date>_gverify_images` 自动建）→ ⑤ 定稿
+  finalize_period_docs（仅当 ⑦ verdict 在）。任何阶段被 kill → 打「重跑同一条命令即幂等续跑」。
+  可选 `--skip-crawl/--skip-guihua/--skip-finalize/--no-tail/--prev-cutoff/--dry`（--dry 只打印
+  每个阶段会跑什么不执行）。
+
 ### 过滤决策（filter_trend.py v5，20260831 全量 583 实测，workers=8/197s）
 
 | 判定 | 含义 | 20260831 计数 |
@@ -379,6 +410,9 @@ zj869/
 ├── agents/                    # 原始多Agent框架（collector 已接真实数据）
 ├── tools/                     # 数据/验证/方法库工具（主战场）
 │   ├── crawl_gouli.py         # ① gouli99 论坛图爬虫
+│   ├── stage_runner.py        # 🔒 流程卡死监控运行器（run_stage：idle+wall 双闹钟 → killpg + 诊断）
+│   ├── run_period.py          # 🔒 一键全期受监控驱动（crawl→fetch→①–⑤→⑥⑦→定稿，幂等续跑）
+│   ├── include_prevday_tail.py  # 期P博主单押①–⑤ 默认运行器（自动并入前一日尾池+补爬，内步全watchdog）
 │   ├── reproduce_guihua.py    # ⑤b 画规自证复现（值保真+逻辑自洽）
 │   ├── crop_charts.py         # 裁剪工具（bottom45/zoom/full 三模式）
 │   ├── verify_chart_hits.py   # ④ 命中核验主脚本（对齐协议+双读）
