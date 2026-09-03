@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""read_blogger_prediction.py — 第2道门：GLM-Vision 拼图批量读「目标期行」博主手写。
+"""read_blogger_prediction.py — 第2道门：Vision 拼图批量读「目标期行」博主手写。
 
-把窄条裁到 5 数字列区（去期号/空白）→ 每批 --batch 张拼成一张纵向拼接图 → 调 glm-5.3-flash
-一次读多条（比逐张 GLM 快，且比 DS-Vision 读位更准——DS 读窄条系统性列位偏移：跳过期号/和值
-列造成万千百十个右移 1 格，产生假命中）。GLM 布局/中文理解强，配合校准行锚定列位更稳。
+把窄条裁到 5 数字列区（去期号/空白）→ 每批 --batch 张拼成一张纵向拼接图 → **默认 DS** 一次读多条。
+2026-09-03 改：主链**全 DS**（deepseek-v4-flash-vision）——auto 不再先试 glm（网关实测反复烧满 360s
+空返/超时才降级，拖批 3-4 分钟/批）。GLM 保留为 `--model glm` 手工可选项（当初用它因布局/位读校准
+更准：DS 读窄条曾系统性列位偏移——跳过期号/和值列造成万千百十个右移 1 格；现拼图顶部已画
+万千百十红标尺 + verify 走校准行锚定列位(position_source=calib-anchor)，DS 列位已可控）。
 
 输入：extract_prediction_strip 的 strips/manifest.json + *_strip.png。
 输出：data/crawl/<date>/blogger_predictions.json（schema 同旧版，供 verify_blogger_prediction 复用）：
@@ -277,6 +279,7 @@ def one_batch(batch, api_ctx):
     # 不 col_crop：裁窄只缩宽不缩高，再 resize 到 760 反而把高放大(250-390px) → montage 过高，
     # DS patch 太多，后端负载下易超时。raw 整条缩到 760 宽后高仅 ~90-125px，稳定可读。
     # 列位偏移根治：build_montage 按 col_centers_in_tile 在每条顶部画 万/千/百/十/个 红标尺。
+    # 2026-09-03 DS 主链：batch=1 单张直送（montage 对 DS 无省时反致空返；1 条实测 36s 干净出结果）。
     for label, file, meta, strip_type, blogger in batch:
         stem = os.path.splitext(file)[0]
         p = os.path.join(api_ctx["strips_dir"], f"{stem}_strip.png")
@@ -299,10 +302,10 @@ def one_batch(batch, api_ctx):
         {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}}]}]
     model = api_ctx.get("model", DS.GLM_MODEL)
     if api_ctx.get("auto"):
-        # 2026-09-02：网关有界自动切换。单次调用超时/断连/空返 → glm→ds 换家，绝不 4 次重试拖批
-        raw, used = DS.call_vision_auto(msgs, providers=("glm", "ds"),
+        # 2026-09-03：全 DS（弃 glm 360s 慢降级）。单家单次有界，失败即记 error，不换家。
+        raw, used = DS.call_vision_auto(msgs, providers=("ds",),
                                         max_tokens=16000, timeout=max(240, 45 * n))
-        model = f"auto({used})" if raw else "auto(glm→ds均失败)"
+        model = "auto(ds)" if raw else "auto(ds失败)"
     else:
         raw = DS.call_llm(model, msgs, max_tokens=16000, timeout=max(240, 45 * n))
     files = [b[1] for b in batch]
@@ -359,11 +362,15 @@ def main():
     ap.add_argument("--posts", default="")
     ap.add_argument("--imp", default="")
     ap.add_argument("--out", default=None)
-    ap.add_argument("--batch", type=int, default=8)
-    ap.add_argument("--workers", type=int, default=3)
-    ap.add_argument("--model", default="glm",
-                    help="视觉模型：glm(默认 glm-5.3-flash，位准) / ds(deepseek-v4-flash-vision) / "
-                         "auto(自动切换 glm→ds：每家单次有界，超时/断连/空返换家)")
+    ap.add_argument("--batch", type=int, default=1,
+                    help="每批拼图张数。DS 版默认 1（2026-09-03 单张直送：montage 对 DS 无省时——"
+                         "n=1 15s / n=4 68s 线性，反致 thinking 型 DS 烧光 max_tokens 空返×4）")
+    ap.add_argument("--workers", type=int, default=1,
+                    help="并发读批数。DS 网关实测只能串行（并发无吞吐反增排队超时）→ 默认 1 = "
+                         "单张直送逐个读；每张 ~36s（真实 prompt 实测），宁慢勿并发空返")
+    ap.add_argument("--model", default="ds",
+                    help="视觉模型：ds(默认 deepseek-v4-flash-vision，2026-09-03 起主链全 DS) / "
+                         "glm(glm-5.3-flash，位读校准用，网关慢勿用于主链) / auto(=ds 别名)")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--cutoff", default="21:30",
@@ -430,14 +437,17 @@ def main():
             existing[os.path.splitext(p["file"])[0]] = p
 
     m = args.model.lower()
-    if m.startswith("a"):
-        model = "auto(glm→ds)"       # 展示用；实际每批在 one_batch 里换家并回填 auto(<家>)
-        api_ctx = {"strips_dir": args.strips, "fr": fr, "period": args.period,
-                   "model": DS.GLM_MODEL, "auto": True}
-        print("--model auto：视觉自动切换 glm→ds（每家单次有界，超时/断连/空返换家，不重试）")
-    else:
-        model = DS.GLM_MODEL if m.startswith("g") else DS.DS_MODEL
+    if m.startswith("g"):
+        # glm 手工指定（位读校准用；网关实测慢/反复超时空返，勿用于主链）
+        model = DS.GLM_MODEL
         api_ctx = {"strips_dir": args.strips, "fr": fr, "period": args.period, "model": model}
+        print(f"--model glm：{DS.GLM_MODEL}（位读校准用，网关慢勿用于主链）")
+    else:
+        # ds / auto（默认）：全 DS，单家单次有界（auto 仅作 ds 别名，保留下层单家有界日志）
+        model = DS.DS_MODEL
+        api_ctx = {"strips_dir": args.strips, "fr": fr, "period": args.period,
+                   "model": model, "auto": m.startswith("a")}
+        print(f"--model ds（默认）：{DS.DS_MODEL} 全 DS 读（2026-09-03 起不再先试 glm 烧 360s）")
     if args.calib and args.calib_draw:
         api_ctx["calib"] = (args.calib, args.calib_draw)
     results = {}

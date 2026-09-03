@@ -212,8 +212,8 @@ def ensure_pool(date_dir, period, draw, calib_period, calib_draw, lottery, pool_
             "--calib", calib_period, "--calib-draw", calib_draw,
             "--strips", strips,
             "--posts", posts_p,
-            "--out", preds, "--batch", "8", "--workers", "3",
-            "--model", "auto", "--cutoff", cutoff_full)
+            "--out", preds, "--batch", "1", "--workers", "1",
+            "--model", "ds", "--cutoff", cutoff_full)
     else:
         print(f"[复用] {pool_label} blogger_predictions.json 已存在 → {preds}")
     return preds
